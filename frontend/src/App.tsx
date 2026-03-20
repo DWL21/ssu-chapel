@@ -47,7 +47,8 @@ function App() {
     setError(null);
 
     try {
-      const response = await fetch('https://db-26-1.nggus5.workers.dev/chapel', {
+      const baseUrl = import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, '') || 'https://db-26-1.nggus5.workers.dev';
+      const response = await fetch(`${baseUrl}/chapel`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
