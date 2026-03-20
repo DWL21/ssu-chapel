@@ -188,8 +188,18 @@ function App() {
             />
           </div>
 
-          <div className="form-group">
-            <label htmlFor="password">비밀번호</label>
+          <div className="form-group" style={{ position: 'relative' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
+              <label htmlFor="password" style={{ marginBottom: 0 }}>비밀번호</label>
+              <a 
+                href="https://smartid.ssu.ac.kr/Symtra_Sso/smln_pwd.asp" 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                style={{ fontSize: '0.75rem', color: 'var(--primary)', textDecoration: 'none', fontWeight: 500 }}
+              >
+                비밀번호 찾기
+              </a>
+            </div>
             <input
               id="password"
               type="password"
