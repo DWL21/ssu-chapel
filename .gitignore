@@ -1,1 +1,5 @@
 rusaint-cli/.env
+rusaint/
+rusaint-wasm/target/
+rusaint-wasm/build/
+rusaint-wasm/node_modules/

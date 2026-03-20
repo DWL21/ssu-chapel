@@ -1,0 +1,6 @@
+name = "rusaint-chapel"
+main = "build/worker/shim.mjs"
+compatibility_date = "2024-11-01"
+
+[build]
+command = "PATH=\"$HOME/.cargo/bin:$PATH\" worker-build --release"
