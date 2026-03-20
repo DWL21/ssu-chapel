@@ -54,8 +54,8 @@ function App() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          id: userId,
-          password: password,
+          id: userId.trim(),
+          password: password.trim(),
           year: parseInt(year),
           semester: semester,
         }),
