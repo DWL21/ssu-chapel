@@ -3,4 +3,4 @@ main = "build/worker/shim.mjs"
 compatibility_date = "2024-11-01"
 
 [build]
-command = "PATH=\"$HOME/.cargo/bin:$PATH\" worker-build --release"
+command = "curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable --target wasm32-unknown-unknown && PATH=\"$HOME/.cargo/bin:$PATH\" cargo install worker-build && PATH=\"$HOME/.cargo/bin:$PATH\" worker-build --release"
