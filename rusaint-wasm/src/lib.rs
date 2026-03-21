@@ -3,14 +3,26 @@ use std::sync::Arc;
 use rusaint::application::chapel::ChapelApplication;
 use rusaint::client::USaintClientBuilder;
 use rusaint::model::SemesterType;
+use rusaint::obtain_ssu_sso_token;
 use rusaint::USaintSession;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use worker::*;
+
+#[derive(Deserialize)]
+struct AuthTokenRequest {
+    id: String,
+    password: String,
+}
+
+#[derive(Serialize)]
+struct AuthTokenResponse {
+    token: String,
+}
 
 #[derive(Deserialize)]
 struct ChapelRequest {
     id: String,
-    password: String,
+    token: String,
     year: u32,
     semester: String,
 }
@@ -30,13 +42,59 @@ const OPENAPI_SPEC: &str = r##"{
   "info": {
     "title": "rusaint Chapel API",
     "description": "SSU u-saint 채플 정보 조회 API. rusaint 라이브러리를 WASM으로 컴파일하여 Cloudflare Worker에서 실행합니다.",
-    "version": "0.1.0"
+    "version": "0.2.0"
   },
   "paths": {
+    "/auth/token": {
+      "post": {
+        "summary": "SSO 토큰 발급",
+        "description": "SSO 아이디/비밀번호로 인증하여 sToken을 발급합니다.",
+        "operationId": "getAuthToken",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/AuthTokenRequest" },
+              "example": {
+                "id": "20211234",
+                "password": "mypassword"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "토큰 발급 성공",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/AuthTokenResponse" }
+              }
+            }
+          },
+          "401": {
+            "description": "인증 실패",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+                "example": { "error": "Authentication failed: 아이디와 비밀번호가 일치하지 않습니다." }
+              }
+            }
+          },
+          "500": {
+            "description": "서버 오류",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
     "/chapel": {
       "post": {
         "summary": "채플 정보 조회",
-        "description": "SSO 아이디/비밀번호로 인증 후 해당 학기의 채플 정보를 반환합니다.",
+        "description": "SSO 토큰으로 인증 후 해당 학기의 채플 정보를 반환합니다.",
         "operationId": "getChapelInfo",
         "requestBody": {
           "required": true,
@@ -45,7 +103,7 @@ const OPENAPI_SPEC: &str = r##"{
               "schema": { "$ref": "#/components/schemas/ChapelRequest" },
               "example": {
                 "id": "20211234",
-                "password": "mypassword",
+                "token": "<sso_token>",
                 "year": 2026,
                 "semester": "1"
               }
@@ -71,11 +129,11 @@ const OPENAPI_SPEC: &str = r##"{
             }
           },
           "401": {
-            "description": "인증 실패",
+            "description": "인증 실패 (토큰 만료 또는 무효)",
             "content": {
               "application/json": {
                 "schema": { "$ref": "#/components/schemas/ErrorResponse" },
-                "example": { "error": "Authentication failed: 아이디와 비밀번호가 일치하지 않습니다." }
+                "example": { "error": "Authentication failed: 토큰이 유효하지 않습니다." }
               }
             }
           },
@@ -93,9 +151,9 @@ const OPENAPI_SPEC: &str = r##"{
   },
   "components": {
     "schemas": {
-      "ChapelRequest": {
+      "AuthTokenRequest": {
         "type": "object",
-        "required": ["id", "password", "year", "semester"],
+        "required": ["id", "password"],
         "properties": {
           "id": {
             "type": "string",
@@ -106,6 +164,31 @@ const OPENAPI_SPEC: &str = r##"{
             "type": "string",
             "description": "비밀번호 (SSO Password)",
             "example": "mypassword"
+          }
+        }
+      },
+      "AuthTokenResponse": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string",
+            "description": "SSO sToken"
+          }
+        }
+      },
+      "ChapelRequest": {
+        "type": "object",
+        "required": ["id", "token", "year", "semester"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "학번 (SSO ID)",
+            "example": "20211234"
+          },
+          "token": {
+            "type": "string",
+            "description": "SSO sToken (/auth/token 으로 발급)",
+            "example": "<sso_token>"
           },
           "year": {
             "type": "integer",
@@ -239,6 +322,10 @@ async fn fetch(req: Request, _env: Env, _ctx: Context) -> Result<Response> {
     let router = Router::new();
 
     let response = router
+        .options("/auth/token", |_, _| {
+            let headers = cors_headers()?;
+            Ok(Response::empty()?.with_headers(headers))
+        })
         .options("/chapel", |_, _| {
             let headers = cors_headers()?;
             Ok(Response::empty()?.with_headers(headers))
@@ -254,12 +341,38 @@ async fn fetch(req: Request, _env: Env, _ctx: Context) -> Result<Response> {
             headers.set("Content-Type", "text/html; charset=utf-8")?;
             Ok(Response::ok(SWAGGER_HTML)?.with_headers(headers))
         })
+        .post_async("/auth/token", |mut req, _ctx| async move {
+            let body: AuthTokenRequest = match req.json().await {
+                Ok(b) => b,
+                Err(_) => {
+                    return cors_response(Response::error(
+                        r#"{"error":"Invalid request body. Expected JSON with id, password fields."}"#,
+                        400,
+                    )?);
+                }
+            };
+
+            match obtain_ssu_sso_token(&body.id, &body.password).await {
+                Ok(token) => {
+                    let resp = AuthTokenResponse { token };
+                    let json = serde_json::to_string(&resp)
+                        .map_err(|e| Error::RustError(e.to_string()))?;
+                    let headers = cors_headers()?;
+                    headers.set("Content-Type", "application/json")?;
+                    Ok(Response::ok(json)?.with_headers(headers))
+                }
+                Err(e) => cors_response(Response::error(
+                    format!(r#"{{"error":"Authentication failed: {}"}}"#, e),
+                    401,
+                )?),
+            }
+        })
         .post_async("/chapel", |mut req, _ctx| async move {
             let body: ChapelRequest = match req.json().await {
                 Ok(b) => b,
                 Err(_) => {
                     return cors_response(Response::error(
-                        r#"{"error":"Invalid request body. Expected JSON with id, password, year, semester fields."}"#,
+                        r#"{"error":"Invalid request body. Expected JSON with id, token, year, semester fields."}"#,
                         400,
                     )?);
                 }
@@ -275,7 +388,7 @@ async fn fetch(req: Request, _env: Env, _ctx: Context) -> Result<Response> {
                 }
             };
 
-            let session = match USaintSession::with_password(&body.id, &body.password).await {
+            let session = match USaintSession::with_token(&body.id, &body.token).await {
                 Ok(s) => Arc::new(s),
                 Err(e) => {
                     return cors_response(Response::error(
