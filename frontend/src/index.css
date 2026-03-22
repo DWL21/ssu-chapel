@@ -3,7 +3,7 @@
 :root {
   --primary: #014099; /* SSU Blue */
   --primary-hover: #012d6c;
-  --bg-color: #f4f6f8; /* Light gray background */
+  --bg-color: #F1F3F7; /* SSU LMS background */
   --text-primary: #1f2937;
   --text-secondary: #4b5563;
   --panel-bg: #ffffff;
@@ -280,8 +280,8 @@ body {
 
 /* Seat Viewer Card */
 .seat-viewer-card {
-  background: linear-gradient(135deg, #f0f4ff 0%, #f5f0ff 100%);
-  border: 1px solid #c4b5fd;
+  background: linear-gradient(135deg, #dbeafe 0%, #e0eaff 100%);
+  border: 1px solid #93c5fd;
   border-radius: 0.75rem;
   padding: 1.25rem;
   margin-bottom: 1.5rem;
@@ -292,7 +292,7 @@ body {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.07em;
-  color: #7c3aed;
+  color: #014099;
   margin-bottom: 1rem;
 }
 
@@ -307,7 +307,7 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  background: #7c3aed;
+  background: #014099;
   color: white;
   border-radius: 0.625rem;
   padding: 0.625rem 1rem;
@@ -343,7 +343,7 @@ body {
 .seat-divider-vertical {
   width: 1px;
   height: 56px;
-  background: #c4b5fd;
+  background: #93c5fd;
   flex-shrink: 0;
 }
 
@@ -379,7 +379,7 @@ body {
 
 /* Chapel Mini Map */
 .chapel-mini-map {
-  border-top: 1px solid #ddd6fe;
+  border-top: 1px solid #bfdbfe;
   padding-top: 1rem;
 }
 
@@ -393,7 +393,7 @@ body {
 .chapel-mini-label {
   font-size: 0.65rem;
   font-weight: 700;
-  color: #7c3aed;
+  color: #014099;
   text-transform: uppercase;
   letter-spacing: 0.06em;
 }
@@ -401,23 +401,23 @@ body {
 .view-reset-btn {
   font-size: 0.65rem;
   font-weight: 600;
-  color: #7c3aed;
-  background: #ede9fe;
-  border: 1px solid #c4b5fd;
+  color: #014099;
+  background: #dbeafe;
+  border: 1px solid #93c5fd;
   border-radius: 9999px;
   padding: 0.15rem 0.6rem;
   cursor: pointer;
 }
 
 .chapel-floors-container {
-  border: 1px solid #ddd6fe;
+  border: 1px solid #bfdbfe;
   border-radius: 0.5rem;
   overflow: hidden;
   margin-bottom: 0.75rem;
 }
 
 .chapel-stage-bar {
-  background: #4c1d95;
+  background: #011a45;
   color: white;
   text-align: center;
   font-size: 0.72rem;
@@ -430,7 +430,7 @@ body {
   display: flex;
   align-items: center;
   gap: 0.4rem;
-  border-top: 1px solid #ede9fe;
+  border-top: 1px solid #e0eaff;
 }
 
 .active-floor {
@@ -439,7 +439,7 @@ body {
 }
 
 .inactive-floor {
-  background: #faf9ff;
+  background: #f0f7ff;
   padding: 0.25rem 0.5rem;
 }
 
@@ -452,12 +452,12 @@ body {
 
 .active-floor .chapel-floor-label {
   font-size: 0.75rem;
-  color: #7c3aed;
+  color: #014099;
 }
 
 .inactive-floor .chapel-floor-label {
   font-size: 0.6rem;
-  color: #c4b5fd;
+  color: #93c5fd;
 }
 
 .chapel-floor-sections {
@@ -486,45 +486,45 @@ body {
 }
 
 .active-floor .chapel-section-cell {
-  background: #f5f3ff;
-  border: 1px solid #ddd6fe;
-  color: #c4b5fd;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #93c5fd;
   padding: 0.55rem 0;
   font-size: 0.9rem;
 }
 
 .active-floor .chapel-section-cell.active {
-  background: #7c3aed;
+  background: #014099;
   color: white;
-  border-color: #7c3aed;
-  box-shadow: 0 2px 6px rgba(124, 58, 237, 0.4);
+  border-color: #014099;
+  box-shadow: 0 2px 6px rgba(1, 64, 153, 0.4);
   font-size: 1rem;
 }
 
 .active-floor .chapel-section-cell.user-marker {
-  background: #ede9fe;
-  border: 2px solid #a78bfa;
-  color: #7c3aed;
+  background: #dbeafe;
+  border: 2px solid #60a5fa;
+  color: #014099;
 }
 
 .inactive-floor .chapel-section-cell {
   background: #f3f4f6;
-  border: 1px solid #e9e4fc;
+  border: 1px solid #e0eaff;
   color: #d1d5db;
   padding: 0.2rem 0;
   font-size: 0.6rem;
 }
 
 .inactive-floor .chapel-section-cell.active {
-  background: #ddd6fe;
-  color: #6d28d9;
-  border-color: #a78bfa;
+  background: #bfdbfe;
+  color: #012d6c;
+  border-color: #60a5fa;
 }
 
 .inactive-floor .chapel-section-cell.user-marker {
-  background: #ede9fe;
-  border: 1px solid #a78bfa;
-  color: #7c3aed;
+  background: #dbeafe;
+  border: 1px solid #60a5fa;
+  color: #014099;
 }
 
 .user-dot {
@@ -534,7 +534,7 @@ body {
   width: 5px;
   height: 5px;
   border-radius: 50%;
-  background: #7c3aed;
+  background: #014099;
 }
 
 /* 복도 구분선 (2층↔3층) */
@@ -547,15 +547,15 @@ body {
   margin: 2px 0;
   font-size: 0.55rem;
   font-weight: 700;
-  color: #a78bfa;
-  background: #f5f3ff;
-  border-top: 1px dashed #c4b5fd;
-  border-bottom: 1px dashed #c4b5fd;
+  color: #60a5fa;
+  background: #eff6ff;
+  border-top: 1px dashed #93c5fd;
+  border-bottom: 1px dashed #93c5fd;
 }
 
 .corridor-hint {
   font-size: 0.5rem;
-  color: #c4b5fd;
+  color: #93c5fd;
   font-weight: 500;
 }
 
@@ -565,9 +565,9 @@ body {
   margin-left: 0.4rem;
   font-size: 0.55rem;
   font-weight: 600;
-  color: #7c3aed;
-  background: #ede9fe;
-  border: 1px solid #c4b5fd;
+  color: #014099;
+  background: #dbeafe;
+  border: 1px solid #93c5fd;
   border-radius: 9999px;
   padding: 0.05rem 0.4rem;
   vertical-align: middle;
@@ -575,8 +575,8 @@ body {
 
 /* 구역 탐색 카드 (비로그인) */
 .section-browser-card {
-  background: #faf9ff;
-  border: 1px solid #ddd6fe;
+  background: #f0f7ff;
+  border: 1px solid #bfdbfe;
   border-radius: 0.625rem;
   padding: 1rem;
   margin-bottom: 1.5rem;
@@ -585,7 +585,7 @@ body {
 .section-browser-title {
   font-size: 0.75rem;
   font-weight: 700;
-  color: #7c3aed;
+  color: #014099;
   text-transform: uppercase;
   letter-spacing: 0.06em;
   margin-bottom: 0.25rem;
@@ -625,7 +625,7 @@ body {
 .section-btn {
   width: 32px;
   height: 32px;
-  border: 1.5px solid #ddd6fe;
+  border: 1.5px solid #bfdbfe;
   border-radius: 6px;
   background: white;
   color: #9ca3af;
@@ -639,21 +639,21 @@ body {
 }
 
 .section-btn:hover {
-  border-color: #a78bfa;
-  color: #7c3aed;
-  background: #f5f3ff;
+  border-color: #60a5fa;
+  color: #014099;
+  background: #eff6ff;
 }
 
 .section-btn.active {
-  background: #7c3aed;
-  border-color: #7c3aed;
+  background: #014099;
+  border-color: #014099;
   color: white;
-  box-shadow: 0 2px 6px rgba(124, 58, 237, 0.35);
+  box-shadow: 0 2px 6px rgba(1, 64, 153, 0.35);
 }
 
 /* 구역 좌석 배치도 */
 .seat-section-map {
-  border-top: 1px solid #ddd6fe;
+  border-top: 1px solid #bfdbfe;
   padding-top: 0.75rem;
   margin-top: 0.25rem;
   margin-bottom: 0.5rem;
@@ -662,7 +662,7 @@ body {
 .seat-section-title {
   font-size: 0.65rem;
   font-weight: 700;
-  color: #7c3aed;
+  color: #014099;
   text-transform: uppercase;
   letter-spacing: 0.06em;
   margin-bottom: 0.35rem;
@@ -671,7 +671,7 @@ body {
 .seat-section-stage-hint {
   font-size: 0.58rem;
   text-align: center;
-  color: #a78bfa;
+  color: #60a5fa;
   font-weight: 600;
   margin-bottom: 0.3rem;
   letter-spacing: 0.05em;
@@ -701,13 +701,13 @@ body {
   width: 22px;
   text-align: center;
   font-size: 0.48rem;
-  color: #c4b5fd;
+  color: #93c5fd;
   font-weight: 700;
   flex-shrink: 0;
 }
 
 .seat-col-label.my-col {
-  color: #7c3aed;
+  color: #014099;
 }
 
 .seat-grid-row {
@@ -720,7 +720,7 @@ body {
 .seat-row-label {
   width: 20px;
   font-size: 0.48rem;
-  color: #c4b5fd;
+  color: #93c5fd;
   font-weight: 700;
   flex-shrink: 0;
   text-align: right;
@@ -728,14 +728,14 @@ body {
 }
 
 .seat-row-label.my-row {
-  color: #7c3aed;
+  color: #014099;
 }
 
 .seat-cell {
   width: 22px;
   height: 18px;
-  background: #faf8ff;
-  border: 1.5px solid #a78bfa;
+  background: #f0f7ff;
+  border: 1.5px solid #60a5fa;
   border-radius: 3px;
   display: flex;
   align-items: center;
@@ -746,11 +746,11 @@ body {
 }
 
 .seat-cell.my-seat {
-  background: #7c3aed;
-  border-color: #6d28d9;
+  background: #014099;
+  border-color: #012d6c;
   color: white;
   font-size: 0.6rem;
-  box-shadow: 0 1px 5px rgba(124, 58, 237, 0.5);
+  box-shadow: 0 1px 5px rgba(1, 64, 153, 0.5);
 }
 
 .chapel-mini-footer {
@@ -760,13 +760,13 @@ body {
 
 .you-badge {
   display: inline-block;
-  background: #ede9fe;
-  color: #6d28d9;
+  background: #dbeafe;
+  color: #012d6c;
   font-size: 0.8rem;
   font-weight: 600;
   padding: 0.3rem 0.875rem;
   border-radius: 9999px;
-  border: 1px solid #c4b5fd;
+  border: 1px solid #93c5fd;
 }
 
 /* Mobile-Friendly Attendance List */
@@ -979,17 +979,17 @@ body {
   #root {
     padding: 2rem;
   }
-  
+
   .dashboard-grid {
     flex-direction: row;
     flex-wrap: wrap;
   }
-  
+
   .stat-card {
     flex: 1;
     min-width: 140px;
   }
-  
+
   .glass-panel {
     padding: 2.5rem;
   }
