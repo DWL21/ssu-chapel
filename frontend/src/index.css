@@ -445,9 +445,10 @@ body {
 
 .chapel-floor-label {
   font-weight: 700;
-  min-width: 22px;
+  width: 32px;
   text-align: right;
   flex-shrink: 0;
+  white-space: nowrap;
 }
 
 .active-floor .chapel-floor-label {
