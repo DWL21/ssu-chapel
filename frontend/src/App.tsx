@@ -545,13 +545,13 @@ function App() {
         <div className="modal-overlay" onClick={() => setShowLoginModal(false)}>
           <div className="modal-panel glass-panel" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
-              <h2 className="modal-title">SSU Chapel 로그인</h2>
+              <h2 className="modal-title">U-Saint 로그인</h2>
               <button className="modal-close" onClick={() => setShowLoginModal(false)}>✕</button>
             </div>
             {authError && <div className="alert-error">{authError}</div>}
             <form onSubmit={handleLogin}>
               <div className="form-group">
-                <label htmlFor="userId">학번 (SSO 아이디)</label>
+                <label htmlFor="userId">학번 (U-Saint 아이디)</label>
                 <input id="userId" type="text" className="input-field" placeholder="예: 20261234"
                   value={userId} onChange={e => setUserId(e.target.value)}
                   disabled={authLoading} autoComplete="username" autoFocus />
@@ -565,7 +565,7 @@ function App() {
                     비밀번호 찾기
                   </a>
                 </div>
-                <input id="password" type="password" className="input-field" placeholder="SSO 비밀번호를 입력하세요"
+                <input id="password" type="password" className="input-field" placeholder="U-Saint 비밀번호를 입력하세요"
                   value={password} onChange={e => setPassword(e.target.value)}
                   disabled={authLoading} autoComplete="current-password" />
               </div>
