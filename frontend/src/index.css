@@ -384,58 +384,109 @@ body {
   color: #7c3aed;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  margin-bottom: 0.6rem;
-}
-
-.chapel-stage-bar {
-  background: #7c3aed;
-  color: white;
-  text-align: center;
-  font-size: 0.75rem;
-  font-weight: 700;
-  padding: 0.35rem;
-  border-radius: 0.375rem;
-  letter-spacing: 0.15em;
   margin-bottom: 0.5rem;
 }
 
-.chapel-mini-grid {
-  display: flex;
-  flex-direction: column;
-  gap: 0.3rem;
+.chapel-floors-container {
+  border: 1px solid #ddd6fe;
+  border-radius: 0.5rem;
+  overflow: hidden;
   margin-bottom: 0.75rem;
 }
 
-.chapel-mini-row {
-  display: flex;
-  gap: 0.3rem;
+.chapel-stage-bar {
+  background: #4c1d95;
+  color: white;
+  text-align: center;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 0.35rem;
+  letter-spacing: 0.15em;
 }
 
-.chapel-mini-cell {
-  flex: 1;
+.chapel-floor-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  border-top: 1px solid #ede9fe;
+}
+
+.active-floor {
   background: white;
-  border: 1px solid #ddd6fe;
-  border-radius: 0.375rem;
+  padding: 0.5rem;
+}
+
+.inactive-floor {
+  background: #faf9ff;
+  padding: 0.25rem 0.5rem;
+}
+
+.chapel-floor-label {
+  font-weight: 700;
+  min-width: 22px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.active-floor .chapel-floor-label {
+  font-size: 0.75rem;
+  color: #7c3aed;
+}
+
+.inactive-floor .chapel-floor-label {
+  font-size: 0.6rem;
+  color: #c4b5fd;
+}
+
+.chapel-floor-sections {
+  display: flex;
+  flex: 1;
+  gap: 3px;
+}
+
+.chapel-section-cell {
+  flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: #9ca3af;
-  padding: 0.5rem 0;
+  font-weight: 700;
+  border-radius: 4px;
   transition: all 0.15s;
 }
 
-.chapel-mini-cell.active {
+.active-floor .chapel-section-cell {
+  background: #f5f3ff;
+  border: 1px solid #ddd6fe;
+  color: #c4b5fd;
+  padding: 0.55rem 0;
+  font-size: 0.9rem;
+}
+
+.active-floor .chapel-section-cell.active {
   background: #7c3aed;
   color: white;
   border-color: #7c3aed;
-  box-shadow: 0 2px 8px rgba(124, 58, 237, 0.35);
-  font-size: 0.95rem;
+  box-shadow: 0 2px 6px rgba(124, 58, 237, 0.4);
+  font-size: 1rem;
+}
+
+.inactive-floor .chapel-section-cell {
+  background: #f3f4f6;
+  border: 1px solid #e9e4fc;
+  color: #d1d5db;
+  padding: 0.2rem 0;
+  font-size: 0.6rem;
+}
+
+.chapel-section-cell.no-label {
+  flex: none;
+  width: 100%;
+  border-radius: 4px;
 }
 
 .chapel-mini-footer {
   text-align: center;
+  margin-top: 0.5rem;
 }
 
 .you-badge {

@@ -15,17 +15,15 @@ interface SeatViewerProps {
   chapelRoom: string;
 }
 
+const FLOOR_SECTIONS: Record<number, string[]> = {
+  1: ['A', 'B', 'C', 'D', 'E'],
+  2: ['F', 'G', 'H', 'I', 'J'],
+  3: [],
+};
+
 function SeatViewer({ seatNumber, floorLevel, chapelRoom }: SeatViewerProps) {
   const { section, row, col } = parseSeat(seatNumber);
-  const sectionIndex = section ? section.charCodeAt(0) - 65 : -1;
-  const gridEnd = Math.max(7, sectionIndex + 2);
-  const allSections = Array.from({ length: Math.min(gridEnd + 1, 12) }, (_, i) =>
-    String.fromCharCode(65 + i)
-  );
-  const sectionRows: string[][] = [];
-  for (let i = 0; i < allSections.length; i += 4) {
-    sectionRows.push(allSections.slice(i, i + 4));
-  }
+  const sections = FLOOR_SECTIONS[floorLevel] ?? [];
 
   return (
     <div className="seat-viewer-card">
@@ -59,28 +57,40 @@ function SeatViewer({ seatNumber, floorLevel, chapelRoom }: SeatViewerProps) {
         </div>
       </div>
 
-      {section && (
-        <div className="chapel-mini-map">
-          <div className="chapel-mini-label">강의실 위치 안내</div>
-          <div className="chapel-stage-bar">무 대</div>
-          <div className="chapel-mini-grid">
-            {sectionRows.map((r, ri) => (
-              <div key={ri} className="chapel-mini-row">
-                {r.map(s => (
-                  <div key={s} className={`chapel-mini-cell${s === section ? ' active' : ''}`}>
-                    {s}
-                  </div>
-                ))}
+      <div className="chapel-mini-map">
+        <div className="chapel-mini-label">강의실 위치 안내</div>
+        <div className="chapel-floors-container">
+          <div className="chapel-stage-bar">중앙무대</div>
+          {([
+            { floor: 1, floorSections: ['A', 'B', 'C', 'D', 'E'] },
+            { floor: 2, floorSections: ['F', 'G', 'H', 'I', 'J'] },
+            { floor: 3, floorSections: [] },
+          ] as { floor: number; floorSections: string[] }[]).map(({ floor, floorSections }) => {
+            const isActive = floor === floorLevel;
+            return (
+              <div key={floor} className={`chapel-floor-row${isActive ? ' active-floor' : ' inactive-floor'}`}>
+                <span className="chapel-floor-label">{floor}층</span>
+                <div className="chapel-floor-sections">
+                  {floorSections.length > 0 ? floorSections.map(s => (
+                    <div key={s} className={`chapel-section-cell${s === section && isActive ? ' active' : ''}`}>
+                      {s}
+                    </div>
+                  )) : (
+                    <div className={`chapel-section-cell no-label${isActive ? ' active' : ''}`}>
+                      {isActive && section ? `${section}구역` : '좌석'}
+                    </div>
+                  )}
+                </div>
               </div>
-            ))}
-          </div>
-          <div className="chapel-mini-footer">
-            <span className="you-badge">
-              내 자리: {section}구역{row ? ` ${row}행` : ''}{col ? ` ${col}열` : ''}
-            </span>
-          </div>
+            );
+          })}
         </div>
-      )}
+        <div className="chapel-mini-footer">
+          <span className="you-badge">
+            내 자리: {section ?? '?'}구역{row ? ` ${row}행` : ''}{col ? ` ${col}열` : ''}
+          </span>
+        </div>
+      </div>
     </div>
   );
 }
