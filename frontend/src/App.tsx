@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import PrivacyPolicyModal from './PrivacyPolicyModal';
 
 // ── 상수 ──────────────────────────────────────────────
 const FLOOR_2_MAX_ROW = 6; // 2층은 1~6행, 7행부터 3층
@@ -262,6 +263,7 @@ interface ChapelResponse {
 // ── 메인 앱 ──────────────────────────────────────────
 function App() {
   const [showLoginModal, setShowLoginModal] = useState(false);
+  const [showPrivacyModal, setShowPrivacyModal] = useState(false);
   const [userId, setUserId]     = useState('');
   const [password, setPassword] = useState('');
   const [authError, setAuthError]   = useState<string | null>(null);
@@ -538,8 +540,20 @@ function App() {
               </button>
             </form>
             <p style={{ marginTop: '1rem', fontSize: '0.75rem', color: '#64748b', textAlign: 'center', lineHeight: '1.5' }}>
-              * 개인정보는 안전하게 보호되며, 채플 정보를 조회하는 데에만 사용되고 서버에 저장되지 않습니다.
+              <button
+                type="button"
+                onClick={() => setShowPrivacyModal(true)}
+                style={{
+                  background: 'none', border: 'none', padding: 0,
+                  color: 'var(--primary, #6366f1)', cursor: 'pointer',
+                  fontSize: '0.75rem', textDecoration: 'underline', fontWeight: 500,
+                }}
+              >
+                개인정보 처리 방침
+              </button>
+              에 동의합니다.
             </p>
+            {showPrivacyModal && <PrivacyPolicyModal onClose={() => setShowPrivacyModal(false)} />}
           </div>
         </div>
       )}
