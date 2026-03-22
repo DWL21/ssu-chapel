@@ -132,11 +132,9 @@ function SeatSectionGrid({
 // ── 나의 지정 좌석 뷰어 (로그인 후) ──────────────────
 interface SeatViewerProps {
   seatNumber: string;
-  floorLevel: number;
-  chapelRoom: string;
 }
 
-function SeatViewer({ seatNumber, floorLevel, chapelRoom }: SeatViewerProps) {
+function SeatViewer({ seatNumber }: SeatViewerProps) {
   const { section, row, col } = parseSeat(seatNumber);
   const [viewSection, setViewSection] = useState<string | null>(null);
 
@@ -459,8 +457,6 @@ function App() {
 
               <SeatViewer
                 seatNumber={chapelData.general_information.seat_number}
-                floorLevel={chapelData.general_information.floor_level}
-                chapelRoom={chapelData.general_information.chapel_room}
               />
             </>
           );
