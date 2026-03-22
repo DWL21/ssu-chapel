@@ -8,7 +8,7 @@ SSU u-saint 시스템의 채플 정보를 조회하는 Cloudflare Worker.
 ## 프로젝트 구조
 
 ```
-db-26-1/
+ssu-chapel/
 ├── rusaint/                         # DWL21/rusaint 클론 + WASM 패치
 │   ├── Cargo.toml                   # workspace (wdpe 로컬 포크 포함)
 │   ├── rust-toolchain.toml
