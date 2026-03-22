@@ -1,5 +1,13 @@
 import { useState, useEffect } from 'react';
 
+// 구역별 최대 열 수 (실제 배치도 기준)
+// 1층: A(좌측fan), B, C(중앙), D, E(우측fan)
+// 2층: F(좌), G, H(중앙), I, J(우)
+const SECTION_MAX_COLS: Record<string, number> = {
+  A: 6,  B: 7,  C: 11, D: 7,  E: 6,
+  F: 9,  G: 7,  H: 9,  I: 6,  J: 7,
+};
+
 // "G - 8 - 2" 형식 파싱 (구역 - 행 - 열)
 function parseSeat(seatStr: string): { section: string | null; row: string | null; col: string | null } {
   const m3 = seatStr.match(/^([A-Za-z]+)\s*-\s*(\d+)\s*-\s*(\d+)$/);
@@ -15,11 +23,6 @@ interface SeatViewerProps {
   chapelRoom: string;
 }
 
-const FLOOR_SECTIONS: Record<number, string[]> = {
-  1: ['A', 'B', 'C', 'D', 'E'],
-  2: ['F', 'G', 'H', 'I', 'J'],
-  3: [],
-};
 
 function SeatViewer({ seatNumber, floorLevel, chapelRoom }: SeatViewerProps) {
   const { section, row, col } = parseSeat(seatNumber);
@@ -90,7 +93,8 @@ function SeatViewer({ seatNumber, floorLevel, chapelRoom }: SeatViewerProps) {
           const userCol = parseInt(col);
           if (isNaN(userRow) || isNaN(userCol)) return null;
           const maxRow = Math.max(userRow + 2, 8);
-          const maxCol = Math.max(userCol + 3, 7);
+          const sectionColMax = section ? (SECTION_MAX_COLS[section] ?? 8) : 8;
+          const maxCol = Math.max(userCol, sectionColMax);
           return (
             <div className="seat-section-map">
               <div className="seat-section-title">{section}구역 좌석 배치</div>
