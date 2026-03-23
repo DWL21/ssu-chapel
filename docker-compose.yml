@@ -1,0 +1,51 @@
+services:
+  worker:
+    build:
+      context: .
+      dockerfile: rusaint-wasm/Dockerfile
+    restart: unless-stopped
+    environment:
+      WEBDIS_URL: http://webdis:7379
+    depends_on:
+      - webdis
+    networks:
+      - internal
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    volumes:
+      - redis-data:/data
+    command: redis-server --save 60 1 --loglevel warning
+    networks:
+      - internal
+
+  webdis:
+    image: nicolas/webdis
+    restart: unless-stopped
+    environment:
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+    depends_on:
+      - redis
+    networks:
+      - internal
+
+  nginx:
+    build:
+      context: ./nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - worker
+    networks:
+      - internal
+
+networks:
+  internal:
+    driver: bridge
+
+volumes:
+  redis-data:
+  certbot-webroot:
