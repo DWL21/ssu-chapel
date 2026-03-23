@@ -71,7 +71,7 @@ async fn webdis_setex(url: &str, key: &str, seconds: u64, value: &str) {
     }
     let req_url = format!("{}/SETEX/{}/{}", url, key, seconds);
     let mut init = RequestInit::new();
-    init.with_method(Method::Post)
+    init.with_method(Method::Put)
         .with_body(Some(wasm_bindgen::JsValue::from_str(value)));
     if let Ok(req) = Request::new_with_init(&req_url, &init) {
         let _ = Fetch::Request(req).send().await;
