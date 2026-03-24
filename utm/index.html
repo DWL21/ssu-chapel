@@ -399,7 +399,10 @@
             <input type="range" id="qr-poster-size" min="80" max="600" value="220" step="10" oninput="onPosterSizeChange()" />
             <span class="slider-val" id="qr-poster-size-val">220px</span>
           </div>
-          <button class="btn-secondary" style="width:100%" onclick="downloadPoster()">포스터 다운로드</button>
+          <div class="btn-row">
+            <button class="btn-secondary" onclick="resetPosterQrPos()">초기 위치로</button>
+            <button class="btn-secondary" onclick="downloadPoster()">포스터 다운로드</button>
+          </div>
         </div>
       </div>
     </div>
@@ -435,7 +438,10 @@
           <canvas id="modal-poster-canvas"></canvas>
         </div>
         <div class="poster-hint" id="modal-poster-hint">자동 위치 감지 중...</div>
-        <button class="btn-secondary" style="width:100%;margin-top:0.5rem" onclick="downloadModalPoster()">포스터 다운로드</button>
+        <div class="btn-row" style="margin-top:0.5rem">
+          <button class="btn-secondary" onclick="resetModalPosterQrPos()">초기 위치로</button>
+          <button class="btn-secondary" onclick="downloadModalPoster()">포스터 다운로드</button>
+        </div>
       </div>
     </div>
   </div>
@@ -742,6 +748,17 @@
       _redrawPoster();
     }
 
+    function resetPosterQrPos() {
+      if (!_pDetected) { alert('자동 감지된 위치가 없습니다.'); return; }
+      _pQrX = _pDetected.cx;
+      _pQrY = _pDetected.cy;
+      _pQrSize = _pDetected.size;
+      document.getElementById('qr-poster-size').value = _pQrSize;
+      document.getElementById('qr-poster-size-val').textContent = _pQrSize + 'px';
+      document.getElementById('poster-pos-hint').textContent = 'QR 위치 자동 감지됨 — 클릭하면 위치 이동';
+      _redrawPoster();
+    }
+
     function downloadPoster() {
       if (_pQrX < 0) { alert('QR 위치를 지정하세요.'); return; }
       const canvas = document.getElementById('poster-canvas');
@@ -779,6 +796,15 @@
 
       _modalQrOff = await _buildQrOffscreen(modalEntry.url, _modalQrSize);
       _drawPosterOnCanvas(canvas, _modalQrOff, _modalQrCx, _modalQrCy, _modalQrSize);
+    }
+
+    function resetModalPosterQrPos() {
+      if (!_pDetected) { alert('자동 감지된 위치가 없습니다.'); return; }
+      _modalQrCx   = _pDetected.cx;
+      _modalQrCy   = _pDetected.cy;
+      _modalQrSize = _pDetected.size;
+      document.getElementById('modal-poster-hint').textContent = 'QR 위치 자동 감지됨 — 클릭하면 위치 이동';
+      _drawPosterOnCanvas(document.getElementById('modal-poster-canvas'), _modalQrOff, _modalQrCx, _modalQrCy, _modalQrSize);
     }
 
     function downloadModalPoster() {
