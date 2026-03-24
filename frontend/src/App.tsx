@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import PrivacyPolicyModal from './PrivacyPolicyModal';
+import TermsOfServiceModal from './TermsOfServiceModal';
 
 // ── 상수 ──────────────────────────────────────────────
 const FLOOR_2_MAX_ROW = 6; // 2층은 1~6행, 7행부터 3층
@@ -298,6 +299,7 @@ interface ChapelResponse {
 function App() {
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
+  const [showTermsModal, setShowTermsModal] = useState(false);
   const [userId, setUserId]     = useState('');
   const [password, setPassword] = useState('');
   const [authError, setAuthError]   = useState<string | null>(null);
@@ -609,10 +611,53 @@ function App() {
               </button>
               에 동의합니다.
             </p>
-            {showPrivacyModal && <PrivacyPolicyModal onClose={() => setShowPrivacyModal(false)} />}
           </div>
         </div>
       )}
+
+      {/* 푸터 */}
+      <footer style={{
+        width: '100%', maxWidth: '680px', margin: '1rem auto 1.5rem',
+        padding: '1rem 1rem 0',
+        borderTop: '1px solid var(--border-color)',
+        textAlign: 'center',
+      }}>
+        <a
+          href="https://docs.google.com/forms/d/e/1FAIpQLSfp-n6_nc1HiMZmhoYB1BYbgmNQ1_iKKd8nvO6osHfd7i86NQ/viewform"
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{
+            display: 'inline-block', marginBottom: '0.75rem',
+            fontSize: '0.875rem', color: 'var(--primary)', fontWeight: 600,
+            textDecoration: 'none', letterSpacing: '-0.01em',
+          }}
+        >
+          서비스 의견 남기기 →
+        </a>
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.75rem', marginBottom: '0.6rem' }}>
+          <button
+            type="button"
+            onClick={() => setShowPrivacyModal(true)}
+            style={{ background: 'none', border: 'none', padding: 0, color: '#94a3b8', cursor: 'pointer', fontSize: '0.75rem' }}
+          >
+            개인정보 처리방침
+          </button>
+          <span style={{ color: '#e2e8f0', fontSize: '0.75rem', userSelect: 'none' }}>|</span>
+          <button
+            type="button"
+            onClick={() => setShowTermsModal(true)}
+            style={{ background: 'none', border: 'none', padding: 0, color: '#94a3b8', cursor: 'pointer', fontSize: '0.75rem' }}
+          >
+            이용약관
+          </button>
+        </div>
+        <p style={{ margin: 0, fontSize: '0.7rem', color: '#cbd5e1' }}>
+          © {new Date().getFullYear()} 숭실대학교 채플 좌석 조회 서비스. All rights reserved.
+        </p>
+      </footer>
+
+      {showPrivacyModal && <PrivacyPolicyModal onClose={() => setShowPrivacyModal(false)} />}
+      {showTermsModal && <TermsOfServiceModal onClose={() => setShowTermsModal(false)} />}
     </div>
   );
 }
