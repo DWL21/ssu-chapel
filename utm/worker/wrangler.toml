@@ -1,0 +1,8 @@
+name = "ssu-chapel-utm"
+main = "src/index.ts"
+compatibility_date = "2025-01-01"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "ssu-chapel-utm"
+database_id = "69f9a952-3fd6-406e-a6d8-8f1a691321d2"

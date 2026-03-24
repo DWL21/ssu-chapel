@@ -2,3 +2,6 @@ rusaint-cli/.env
 rusaint-wasm/target/
 rusaint-wasm/build/
 rusaint-wasm/node_modules/
+
+# Wrangler cache
+.wrangler/

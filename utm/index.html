@@ -313,7 +313,7 @@
           <input id="utm-campaign" type="text" placeholder="예: 2026_spring, chapel_launch" />
           <div class="presets">
             <button class="preset-btn" onclick="set('utm-campaign','chapel_poc')">chapel_poc</button>
-            <button class="preset-btn" onclick="set('utm-campaign','chapel_lunch')">chapel_lunch</button>
+            <button class="preset-btn" onclick="set('utm-campaign','chapel_launch')">chapel_launch</button>
           </div>
         </div>
 
@@ -371,7 +371,9 @@
   </div>
 
   <script>
-    const STORAGE_KEY = 'ssu_chapel_utms';
+    // ── 배포 후 Worker URL로 교체 ──────────────────────────
+    const API_BASE = 'https://ssu-chapel-utm.nggus5.workers.dev';
+    // ─────────────────────────────────────────────────────
 
     function nowStamp() {
       const d = new Date();
@@ -384,7 +386,6 @@
       return `${yy}${mm}${dd}${hh}${mi}${ss}`;
     }
 
-    // content hint 업데이트
     document.getElementById('utm-content').addEventListener('input', () => {
       const val = document.getElementById('utm-content').value.trim();
       document.getElementById('content-hint').textContent =
@@ -393,9 +394,6 @@
     document.getElementById('content-hint').textContent = `비워두면 "${nowStamp()}" 으로 설정됩니다`;
 
     function set(id, val) { document.getElementById(id).value = val; }
-
-    function load() { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); }
-    function save(list) { localStorage.setItem(STORAGE_KEY, JSON.stringify(list)); }
 
     function buildUrl(base, source, campaign, content) {
       const url = new URL(base);
@@ -416,7 +414,7 @@
       });
     }
 
-    function generate() {
+    async function generate() {
       const base     = document.getElementById('base-url').value.trim();
       const source   = document.getElementById('utm-source').value.trim();
       const campaign = document.getElementById('utm-campaign').value.trim();
@@ -428,20 +426,19 @@
       }
 
       const finalUrl = buildUrl(base, source, campaign, content);
-      const entry = {
-        id: Date.now(),
-        base, source, campaign, content,
-        url: finalUrl,
-        createdAt: new Date().toISOString(),
-      };
 
-      const list = load();
-      list.unshift(entry);
-      save(list);
+      try {
+        await fetch(`${API_BASE}/api/utm`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ base, source, campaign, content, url: finalUrl }),
+        });
+      } catch (e) {
+        console.warn('UTM 저장 실패 (서버 연결 불가):', e);
+      }
 
       document.getElementById('output-url').textContent = finalUrl;
       renderQRWithUrl('qr-canvas', finalUrl, 240);
-
       document.getElementById('result').style.display = 'block';
       document.getElementById('result').scrollIntoView({ behavior: 'smooth' });
     }
@@ -464,47 +461,54 @@
       a.click();
     }
 
-    // 목록 렌더링
-    function renderList() {
-      const list = load();
+    let cachedList = [];
+
+    async function renderList() {
       const el = document.getElementById('utm-list');
-      if (!list.length) {
-        el.innerHTML = '<div class="list-empty">저장된 UTM이 없습니다.</div>';
-        return;
-      }
-      el.innerHTML = list.map(item => `
-        <div class="utm-item" onclick="openModal(${item.id})">
-          <div class="utm-item-header">
-            <div class="utm-item-tags">
-              <span class="tag tag-source">${item.source}</span>
-              <span class="tag tag-campaign">${item.campaign}</span>
-              <span class="tag tag-content">${item.content}</span>
+      el.innerHTML = '<div class="list-empty">불러오는 중...</div>';
+      try {
+        const res = await fetch(`${API_BASE}/api/utm`);
+        cachedList = await res.json();
+        if (!cachedList.length) {
+          el.innerHTML = '<div class="list-empty">저장된 UTM이 없습니다.</div>';
+          return;
+        }
+        el.innerHTML = cachedList.map(item => `
+          <div class="utm-item" onclick="openModal(${item.id})">
+            <div class="utm-item-header">
+              <div class="utm-item-tags">
+                <span class="tag tag-source">${item.source}</span>
+                <span class="tag tag-campaign">${item.campaign}</span>
+                <span class="tag tag-content">${item.content}</span>
+              </div>
+              <div style="display:flex;gap:0.4rem;align-items:center">
+                <span class="utm-item-date">${formatDate(item.created_at)}</span>
+                <button class="btn-delete" onclick="deleteItem(event,${item.id})">삭제</button>
+              </div>
             </div>
-            <div style="display:flex;gap:0.4rem;align-items:center">
-              <span class="utm-item-date">${formatDate(item.createdAt)}</span>
-              <button class="btn-delete" onclick="deleteItem(event,${item.id})">삭제</button>
-            </div>
+            <div class="utm-item-url">${item.url}</div>
           </div>
-          <div class="utm-item-url">${item.url}</div>
-        </div>
-      `).join('');
+        `).join('');
+      } catch (e) {
+        el.innerHTML = '<div class="list-empty">목록을 불러오지 못했습니다.</div>';
+      }
     }
 
     function formatDate(iso) {
-      const d = new Date(iso);
+      const d = new Date(iso + (iso.endsWith('Z') ? '' : 'Z'));
       return `${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,'0')}.${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
     }
 
-    function deleteItem(e, id) {
+    async function deleteItem(e, id) {
       e.stopPropagation();
       if (!confirm('삭제하시겠습니까?')) return;
-      save(load().filter(i => i.id !== id));
+      await fetch(`${API_BASE}/api/utm/${id}`, { method: 'DELETE' });
       renderList();
     }
 
-    function clearAll() {
+    async function clearAll() {
       if (!confirm('전체 삭제하시겠습니까?')) return;
-      save([]);
+      await fetch(`${API_BASE}/api/utm`, { method: 'DELETE' });
       renderList();
     }
 
@@ -512,8 +516,7 @@
     let modalEntry = null;
 
     function openModal(id) {
-      modalEntry = load().find(i => i.id === id);
-      if (!modalEntry) return;
+      modalEntry = cachedList.find(i => i.id === id);
       document.getElementById('modal-url').textContent = modalEntry.url;
       renderQRWithUrl('modal-qr', modalEntry.url, 200);
       document.getElementById('modal').classList.add('open');
