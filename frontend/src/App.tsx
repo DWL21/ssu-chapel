@@ -490,7 +490,7 @@ function App() {
                     <span>
                       {isOfficiallyPassed ? '통과'
                         : remainingAbsences > 0 ? `여유 ${remainingAbsences}회`
-                        : remainingAbsences === 0 ? '한도 도달'
+                        : remainingAbsences === 0 ? '여유 없음'
                         : `${Math.abs(remainingAbsences)}회 초과`}
                     </span>
                   </span>
