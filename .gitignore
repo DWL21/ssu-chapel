@@ -5,3 +5,6 @@ rusaint-wasm/node_modules/
 
 # Wrangler cache
 .wrangler/
+
+# Request/response logs
+log/

@@ -13,6 +13,7 @@ if [ ! -f /app/build/index_bg.wasm ]; then
     exit 1
 fi
 
+mkdir -p /logs
 echo "workerd starting: webdis=${WEBDIS_URL}"
 
 # workerd.capnp 생성
@@ -48,4 +49,4 @@ const chapelWorker :Workerd.Worker = (
 );
 CAPNP
 
-exec /app/node_modules/.bin/workerd serve /app/workerd.capnp
+/app/node_modules/.bin/workerd serve /app/workerd.capnp 2>&1 | tee -a /logs/chapel.log

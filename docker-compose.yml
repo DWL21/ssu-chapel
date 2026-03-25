@@ -6,6 +6,8 @@ services:
     restart: unless-stopped
     environment:
       WEBDIS_URL: http://webdis:7379
+    volumes:
+      - ./log:/logs
     depends_on:
       - webdis
     networks:

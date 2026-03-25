@@ -490,23 +490,32 @@ async fn fetch(req: Request, _env: Env, _ctx: Context) -> Result<Response> {
                 }
             };
 
+            let ts = || js_sys::Date::new_0().to_iso_string().as_string().unwrap_or_default();
+            console_log!(
+                "[{}] CHAPEL REQUEST body={}",
+                ts(),
+                serde_json::json!({
+                    "token": "***",
+                    "year": body.year,
+                    "semester": body.semester,
+                })
+            );
+
             let semester = match parse_semester(&body.semester) {
                 Ok(s) => s,
                 Err(e) => {
-                    return cors_response(Response::error(
-                        format!(r#"{{"error":"Invalid semester: {}"}}"#, e),
-                        400,
-                    )?);
+                    let err_body = format!(r#"{{"error":"Invalid semester: {}"}}"#, e);
+                    console_log!("[{}] CHAPEL RESPONSE 400 body={}", ts(), err_body);
+                    return cors_response(Response::error(err_body, 400)?);
                 }
             };
 
             let session = match USaintSession::with_token("", &body.token).await {
                 Ok(s) => Arc::new(s),
                 Err(e) => {
-                    return cors_response(Response::error(
-                        format!(r#"{{"error":"Authentication failed: {}"}}"#, e),
-                        401,
-                    )?);
+                    let err_body = format!(r#"{{"error":"Authentication failed: {}"}}"#, e);
+                    console_log!("[{}] CHAPEL RESPONSE 401 body={}", ts(), err_body);
+                    return cors_response(Response::error(err_body, 401)?);
                 }
             };
 
@@ -517,10 +526,9 @@ async fn fetch(req: Request, _env: Env, _ctx: Context) -> Result<Response> {
             {
                 Ok(a) => a,
                 Err(e) => {
-                    return cors_response(Response::error(
-                        format!(r#"{{"error":"Failed to initialize chapel app: {}"}}"#, e),
-                        500,
-                    )?);
+                    let err_body = format!(r#"{{"error":"Failed to initialize chapel app: {}"}}"#, e);
+                    console_log!("[{}] CHAPEL RESPONSE 500 body={}", ts(), err_body);
+                    return cors_response(Response::error(err_body, 500)?);
                 }
             };
 
@@ -528,14 +536,16 @@ async fn fetch(req: Request, _env: Env, _ctx: Context) -> Result<Response> {
                 Ok(info) => {
                     let json = serde_json::to_string(&info)
                         .map_err(|e| Error::RustError(e.to_string()))?;
+                    console_log!("[{}] CHAPEL RESPONSE 200 body={}", ts(), json);
                     let headers = cors_headers()?;
                     headers.set("Content-Type", "application/json")?;
                     Ok(Response::ok(json)?.with_headers(headers))
                 }
-                Err(e) => cors_response(Response::error(
-                    format!(r#"{{"error":"Failed to fetch chapel info: {}"}}"#, e),
-                    500,
-                )?),
+                Err(e) => {
+                    let err_body = format!(r#"{{"error":"Failed to fetch chapel info: {}"}}"#, e);
+                    console_log!("[{}] CHAPEL RESPONSE 500 body={}", ts(), err_body);
+                    cors_response(Response::error(err_body, 500)?)
+                }
             }
         })
         .run(req, _env)
