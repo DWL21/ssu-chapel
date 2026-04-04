@@ -8,3 +8,8 @@ rusaint-wasm/node_modules/
 
 # Request/response logs
 log/
+
+# Python
+__pycache__/
+*.pyc
+.venv/

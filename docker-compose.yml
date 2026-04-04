@@ -33,6 +33,13 @@ services:
     networks:
       - internal
 
+  scatch-crawler:
+    build:
+      context: ./scatch-crawler
+    restart: unless-stopped
+    networks:
+      - internal
+
   certbot:
     image: certbot/certbot
     volumes:
