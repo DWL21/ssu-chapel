@@ -1,3 +1,4 @@
+.env
 rusaint-cli/.env
 rusaint-wasm/target/
 rusaint-wasm/build/

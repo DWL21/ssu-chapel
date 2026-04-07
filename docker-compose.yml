@@ -48,6 +48,37 @@ services:
     networks:
       - internal
 
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    ports:
+      - "${TAILSCALE_IP}:5432:5432"  # Tailscale IP (tailscale ip -4)
+    networks:
+      - internal
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - internal
+
   nginx:
     build:
       context: ./nginx
@@ -60,6 +91,7 @@ services:
       - certbot-webroot:/var/www/certbot
     depends_on:
       - worker
+      - backend
     networks:
       - internal
 
@@ -72,3 +104,4 @@ volumes:
   redis-data:
   certbot-webroot:
   letsencrypt:
+  postgres-data:
