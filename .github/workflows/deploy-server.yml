@@ -121,13 +121,23 @@ jobs:
       - uses: tailscale/github-action@v3
         with:
           authkey: ${{ secrets.TAILSCALE_AUTHKEY }}
+          tags: tag:ci
+
+      - name: Setup SSH known hosts
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_KNOWN_HOSTS }}" >> ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
 
       - name: SSH Deploy
+        env:
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          ssh -o StrictHostKeyChecking=no \
-            ${{ vars.SSH_USER }}@${{ vars.SSH_HOST }} \
-            "cd ${{ vars.DEPLOY_PATH }} && \
-             echo '${{ secrets.GITHUB_TOKEN }}' | docker login ghcr.io -u ${{ github.actor }} --password-stdin && \
-             docker compose pull worker backend nginx && \
-             docker compose up -d --no-build && \
-             docker image prune -f"
+          ssh "${{ vars.SSH_USER }}@${{ vars.SSH_HOST }}" bash << ENDSSH
+          set -e
+          cd "${{ vars.DEPLOY_PATH }}"
+          echo "${GHCR_TOKEN}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+          docker compose pull worker backend nginx
+          docker compose up -d --no-build
+          docker image prune -f
+          ENDSSH
