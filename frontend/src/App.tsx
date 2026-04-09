@@ -1,10 +1,8 @@
 import { useState, useEffect } from 'react';
 import PrivacyPolicyModal from './PrivacyPolicyModal';
 
-// ── 상수 ──────────────────────────────────────────────
-const FLOOR_2_MAX_ROW = 6; // 2층은 1~6행, 7행부터 3층
+const FLOOR_2_MAX_ROW = 6;
 
-// 구역별 행별 실제 좌석 수 (index 0 = 1행). -1 = 장애인석 행
 const SECTION_ROW_COLS: Record<string, number[]> = {
   A: [5, 6, 7, 8, 8, 8, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 5],
   B: [6, 6, 6, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 3],
@@ -24,7 +22,6 @@ const FLOOR_GROUPS = [
   { key: '23', label: '2·3층', sections: SECTIONS_23F },
 ];
 
-// ── 좌석 번호 파싱 ("G - 8 - 2" → section/row/col) ───
 function parseSeat(seatStr: string): { section: string | null; row: string | null; col: string | null } {
   const m3 = seatStr.match(/^([A-Za-z]+)\s*-\s*(\d+)\s*-\s*(\d+)$/);
   if (m3) return { section: m3[1].toUpperCase(), row: m3[2], col: m3[3] };
@@ -33,7 +30,6 @@ function parseSeat(seatStr: string): { section: string | null; row: string | nul
   return { section: null, row: null, col: seatStr };
 }
 
-// ── 강의실 위치 미니맵 ────────────────────────────────
 function ChapelMiniMap({
   displaySection,
   userSection,
@@ -73,7 +69,6 @@ function ChapelMiniMap({
                         borderColor: isDarkMode ? '#334155' : '#e2e8f0'
                     }}>
                     {s}
-                    {/* 핑 효과 클래스 유지 */}
                     {isUser && !isViewed && <span className="user-dot seat-ping" />}
                   </div>
                 );
@@ -86,7 +81,6 @@ function ChapelMiniMap({
   );
 }
 
-// ── 구역 좌석 배치도 ──────────────────────────────────
 function SeatSectionGrid({
   section,
   userRow,
@@ -135,7 +129,6 @@ function SeatSectionGrid({
           const isMine = isMineRow && c === userCol;
           if (!exists) return <div key={c} className="seat-cell seat-cell-void" />;
           return (
-            // 핑 효과 클래스 유지
             <div key={c} className={`seat-cell${isMine ? ' my-seat seat-ping' : ''}`}
                  style={{ 
                     backgroundColor: isMine ? (isDarkMode ? '#38bdf8' : '#002147') : (isDarkMode ? '#334155' : '#e2e8f0'),
@@ -170,7 +163,6 @@ function SeatSectionGrid({
   );
 }
 
-// ── 나의 지정 좌석 뷰어 (로그인 후) ──────────────────
 interface SeatViewerProps {
   seatNumber: string;
   isDarkMode: boolean;
@@ -262,7 +254,6 @@ function SeatViewer({ seatNumber, isDarkMode }: SeatViewerProps) {
   );
 }
 
-// ── 구역 탐색 (비로그인) ─────────────────────────────
 function SectionBrowser({ isDarkMode }: { isDarkMode: boolean }) {
   const [viewSection, setViewSection] = useState<string | null>(null);
 
@@ -285,7 +276,6 @@ function SectionBrowser({ isDarkMode }: { isDarkMode: boolean }) {
   );
 }
 
-// ── 데이터 타입 ──────────────────────────────────────
 interface ChapelResponse {
   year: number;
   semester: string;
@@ -313,7 +303,6 @@ interface ChapelResponse {
   absence_requests: any[];
 }
 
-// ── 메인 앱 ──────────────────────────────────────────
 function App() {
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
@@ -337,11 +326,7 @@ function App() {
 
   const [isDarkMode, setIsDarkMode] = useState<boolean>(() => localStorage.getItem('theme') === 'dark');
 
-  const [animateWidth, setAnimateWidth] = useState(0);
   const [stampVisible, setStampVisible] = useState(false);
-
-  // ── 출결 기록 더보기 상태 (이번에 추가됨) ──
-  const [showAllAttendance, setShowAllAttendance] = useState(false);
 
   useEffect(() => {
     localStorage.setItem('theme', isDarkMode ? 'dark' : 'light');
@@ -350,15 +335,8 @@ function App() {
 
   useEffect(() => {
     if (chapelData) {
-      const total = chapelData.attendances.length;
-      const attended = chapelData.attendances.filter(a => a.attendance === '출석').length;
-      const required = Math.ceil(total * 0.8);
-      const targetPercent = (attended / required) * 100;
-      
-      setAnimateWidth(0); 
       setStampVisible(false); 
       const timer = setTimeout(() => {
-        setAnimateWidth(targetPercent);
         setStampVisible(true);
       }, 150);
       return () => clearTimeout(timer);
@@ -402,8 +380,6 @@ function App() {
           setToken(null);
           setAuthError('인증이 만료되었습니다. 다시 로그인해주세요.');
           setShowLoginModal(true);
-          (window as any).clarity?.('event', 'auth_expired');
-          (window as any).gtag?.('event', 'auth_expired');
           return;
         }
         let errMsg = '채플 정보를 불러오는데 실패했습니다.';
@@ -415,12 +391,8 @@ function App() {
         throw new Error(errMsg);
       }
       setChapelData(await response.json());
-      (window as any).clarity?.('event', 'chapel_loaded');
-      (window as any).gtag?.('event', 'chapel_loaded');
     } catch (err: any) {
       setError(err.message || '알 수 없는 오류가 발생했습니다.');
-      (window as any).clarity?.('event', 'chapel_load_error');
-      (window as any).gtag?.('event', 'chapel_load_error');
     } finally {
       setLoading(false);
     }
@@ -452,14 +424,9 @@ function App() {
       setToken(data.token);
       setShowLoginModal(false);
       setPassword('');
-      (window as any).clarity?.('event', 'login_success');
-      (window as any).clarity?.('identify', userId.trim());
-      (window as any).gtag?.('event', 'login');
       fetchChapelData(data.token, year, semester);
     } catch (err: any) {
       setAuthError(err.message || '알 수 없는 오류가 발생했습니다.');
-      (window as any).clarity?.('event', 'login_failed');
-      (window as any).gtag?.('event', 'login_failed');
     } finally {
       setAuthLoading(false);
     }
@@ -478,40 +445,14 @@ function App() {
     localStorage.removeItem('ssu_userid');
     setToken(null);
     setChapelData(null);
-    setAnimateWidth(0); 
     setStampVisible(false); 
-    setShowAllAttendance(false); // 리셋
     setLoading(false);
-    (window as any).clarity?.('event', 'logout');
-    (window as any).gtag?.('event', 'logout');
     setUserId('');
     setPassword('');
     setError(null);
   };
 
   useEffect(() => { if (token) fetchChapelData(token, year, semester); }, []);
-
-  const getDDayInfo = () => {
-    if (!chapelData) return null;
-    const timeStr = chapelData.general_information.chapel_time;
-    const dayMap: { [key: string]: number } = { '일': 0, '월': 1, '화': 2, '수': 3, '목': 4, '금': 5, '토': 6 };
-    const targetDayChar = timeStr[0];
-    const targetDay = dayMap[targetDayChar];
-    const today = new Date();
-    const todayDay = today.getDay();
-    let diff = targetDay - todayDay;
-    if (diff < 0) diff += 7;
-    
-    const timeOnly = timeStr.match(/\(([^)]+)\)/)?.[1]?.split('~')[0] || timeStr;
-
-    return {
-      dayStr: targetDayChar,
-      timeOnly,
-      diff: diff
-    };
-  };
-
-  const dDay = getDDayInfo();
 
   const getStatusColor = (attendance: string) => {
     if (attendance === '출석') return 'status-present';
@@ -569,41 +510,6 @@ return (
           {token && <button className="btn-icon" onClick={handleLogout}>로그아웃</button>}
         </div>
 
-        {chapelData && dDay && (
-          <div style={{
-            backgroundColor: isDarkMode ? 'rgba(56, 189, 248, 0.1)' : '#eff6ff',
-            border: `1px solid ${isDarkMode ? '#0ea5e9' : '#bfdbfe'}`,
-            borderRadius: '16px',
-            padding: '1.25rem',
-            marginBottom: '1.5rem',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center'
-          }}>
-            <div>
-              <div style={{ fontSize: '0.85rem', color: isDarkMode ? '#38bdf8' : '#1e40af', fontWeight: 600, marginBottom: '4px' }}>
-                이번 주 채플 일정
-              </div>
-              <div style={{ fontSize: '1.1rem', fontWeight: 'bold' }}>
-                {dDay.dayStr}요일 <span style={{ color: theme.ssuBlue }}>{dDay.timeOnly}</span>
-              </div>
-              <div style={{ fontSize: '0.8rem', color: theme.subText, marginTop: '2px' }}>
-                한경직기념관 대강당
-              </div>
-            </div>
-            <div style={{
-              backgroundColor: theme.ssuBlue,
-              color: '#fff',
-              padding: '8px 16px',
-              borderRadius: '12px',
-              fontWeight: 'bold',
-              fontSize: '1.2rem'
-            }}>
-              {dDay.diff === 0 ? 'D-Day' : `D-${dDay.diff}`}
-            </div>
-          </div>
-        )}
-
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', marginTop: '0.25rem' }}>
           <h3 className="section-title" style={{ margin: 0 }}>나의 채플 정보</h3>
           {token && (
@@ -650,18 +556,17 @@ return (
               )}
 
               <div className="dashboard-grid">
-                <div className="stat-card" style={{ borderTop: `4px solid ${theme.ssuBlue}`, backgroundColor: theme.panel }}>
-                  <span className="stat-label" style={{ color: theme.subText }}>채플 시간</span>
-                  <span className="stat-value" style={{ color: theme.ssuBlue }}>
-                    {chapelData.general_information.chapel_time.split('(')[0].trim()}
-                  </span>
-                  <div style={{ height: '8px', width: '100%', backgroundColor: isDarkMode ? '#334155' : '#e5e7eb', borderRadius: 999, overflow: 'hidden', marginTop: '12px' }}>
-                    <div style={{ 
-                      height: '100%', 
-                      transition: 'width 1.2s cubic-bezier(0.34, 1.56, 0.64, 1)', 
-                      width: `${Math.min(animateWidth, 100)}%`, 
-                      backgroundColor: isOfficiallyPassed ? '#10b981' : theme.ssuBlue 
-                    }}></div>
+                <div className="stat-card" style={{ borderTop: `4px solid ${theme.ssuBlue}`, backgroundColor: theme.panel, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                  <div>
+                    <span className="stat-label" style={{ color: theme.subText, marginBottom: '12px', display: 'block' }}>채플 일정</span>
+                    <span className="stat-value" style={{ color: theme.text, fontSize: '1.4rem', fontWeight: 800, letterSpacing: '-0.5px', wordBreak: 'keep-all' }}>
+                      {chapelData.general_information.chapel_time}
+                    </span>
+                  </div>
+                  <div style={{ marginTop: '16px', paddingTop: '12px', borderTop: `1px solid ${theme.border}` }}>
+                    <span style={{ fontSize: '0.85rem', color: theme.subText, fontWeight: 500 }}>
+                      {chapelData.general_information.chapel_room || '한경직기념관 대강당'}
+                    </span>
                   </div>
                 </div>
 
@@ -766,42 +671,33 @@ return (
           )}
         </div>
 
-        {/* ── 아코디언 및 최신순 정렬 적용된 출결 기록 (수정됨) ── */}
-        {chapelData && (() => {
-          const reversedAttendances = [...chapelData.attendances].reverse();
-          const visibleAttendances = showAllAttendance ? reversedAttendances : reversedAttendances.slice(0, 3);
-
-          return (
-            <>
-              <h3 style={{ marginBottom: '1rem', color: theme.text, fontSize: '1rem', marginTop: '1.5rem' }}>출결 기록</h3>
-              <div className="attendance-list">
-                {visibleAttendances.map((record, index) => (
-                  <div key={index} className="attendance-card" style={{ backgroundColor: theme.bg, border: `1px solid ${theme.border}` }}>
-                    <div className="attendance-header">
-                      <span className="attendance-date" style={{ color: theme.text }}>{record.class_date}</span>
-                      <span className={`attendance-status ${getStatusColor(record.attendance)}`}>{record.attendance || '-'}</span>
-                    </div>
+        {chapelData && (
+          <>
+            <h3 style={{ marginBottom: '1rem', color: theme.text, fontSize: '1rem', marginTop: '1.5rem' }}>출결 기록</h3>
+            <div className="attendance-list" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              {chapelData.attendances.map((record, index) => (
+                <div key={index} className="attendance-card" style={{ 
+                    backgroundColor: theme.bg, 
+                    border: `1px solid ${theme.border}`,
+                    borderRadius: '8px',
+                    padding: '1rem'
+                }}>
+                  <div className="attendance-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                    <span className="attendance-date" style={{ color: theme.text, fontWeight: 'bold' }}>{record.class_date}</span>
+                    <span className={`attendance-status ${getStatusColor(record.attendance)}`}>{record.attendance || '-'}</span>
                   </div>
-                ))}
-              </div>
-              {reversedAttendances.length > 3 && (
-                <button
-                  onClick={() => setShowAllAttendance(!showAllAttendance)}
-                  style={{
-                    width: '100%', padding: '0.75rem', marginTop: '0.5rem',
-                    backgroundColor: 'transparent', border: `1px dashed ${theme.border}`,
-                    borderRadius: '8px', color: theme.subText, cursor: 'pointer',
-                    fontSize: '0.85rem', fontWeight: 'bold', transition: 'all 0.2s'
-                  }}
-                  onMouseOver={(e) => (e.currentTarget.style.backgroundColor = isDarkMode ? '#334155' : '#f1f5f9')}
-                  onMouseOut={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-                >
-                  {showAllAttendance ? '▲ 접기' : `▼ 이전 기록 더보기 (${reversedAttendances.length - 3}개)`}
-                </button>
-              )}
-            </>
-          );
-        })()}
+                  <div className="attendance-details" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.85rem', color: theme.subText }}>
+                    <span>{record.title}</span>
+                    <span>
+                      {record.instructor}
+                      {record.instructor_department ? ` (${record.instructor_department})` : ''}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
       </div>
 
       {showLoginModal && (
