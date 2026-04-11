@@ -36,7 +36,7 @@ services:
 
   scatch-crawler:
     build:
-      context: ./scatch-crawler
+      context: ./backend/scatch-crawler
     restart: unless-stopped
     networks:
       - internal

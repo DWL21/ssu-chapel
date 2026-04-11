@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import create_async_engine
 
 from app.config import settings
 from app.database import Base
+import app.models  # noqa: F401 — 모델 등록
 
 config = context.config
 if config.config_file_name is not None:
