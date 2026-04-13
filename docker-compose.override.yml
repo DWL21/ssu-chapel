@@ -1,0 +1,36 @@
+services:
+  worker:
+    profiles: ["full"]
+  redis:
+    profiles: ["full"]
+  webdis:
+    profiles: ["full"]
+  certbot:
+    profiles: ["full"]
+  nginx:
+    profiles: ["full"]
+
+  postgres:
+    ports: !override
+      - "5432:5432"
+
+  backend:
+    build:
+      context: ./backend
+    image: ssu-chapel/backend:local
+    environment:
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      CRAWLER_BASE_URL: http://scatch-crawler:8000
+    depends_on:
+      postgres:
+        condition: service_healthy
+      scatch-crawler:
+        condition: service_started
+    ports:
+      - "8001:8000"
+    command: >
+      sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000"
+
+  scatch-crawler:
+    ports:
+      - "8002:8000"
