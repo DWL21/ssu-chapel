@@ -1,5 +1,6 @@
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import DeclarativeBase
+from sqlalchemy import select
 
 from .config import settings
 
@@ -10,7 +11,13 @@ AsyncSessionLocal = async_sessionmaker(engine, expire_on_commit=False)
 class Base(DeclarativeBase):
     pass
 
-
 async def get_db() -> AsyncSession:
     async with AsyncSessionLocal() as session:
         yield session
+
+async def get_emails(session: AsyncSession):
+    from .models.subscription import Subscriber
+
+    result = await session.execute(select(Subscriber.email))
+    emails = result.scalars().all()
+    return emails
