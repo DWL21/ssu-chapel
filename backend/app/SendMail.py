@@ -1,21 +1,40 @@
-# backend/app/email_service.py
-from dotenv import load_dotenv
-load_dotenv()
-
 import smtplib
 from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 import os
+from dotenv import load_dotenv
 
-def send_email(to_email, content):
-    from_email = "dbstjr0219@gmail.com"
-    app_password = os.getenv("EMAIL_PASSWORD")
+load_dotenv()
 
-    msg = MIMEText(content)
-    msg["Subject"] = "공지 요약"
-    msg["From"] = from_email
+def send_email(to_email: str, subject: str, body: str = "", html_body: str = ""):
+    """Send email using SMTP (Gmail).
+
+    Args:
+        to_email: Recipient email address
+        subject: Email subject
+        body: Plain text email body
+        html_body: HTML email body (if provided, takes precedence)
+    """
+    smtp_host = os.getenv("SMTP_HOST", "smtp.gmail.com")
+    smtp_port = int(os.getenv("SMTP_PORT", 587))
+    smtp_user = os.getenv("SMTP_USER")
+    smtp_password = os.getenv("SMTP_PASSWORD")
+
+    if not smtp_user or not smtp_password:
+        raise ValueError("SMTP_USER and SMTP_PASSWORD environment variables are required")
+
+    msg = MIMEMultipart("alternative")
+    msg["Subject"] = subject
+    msg["From"] = smtp_user
     msg["To"] = to_email
 
-    with smtplib.SMTP("smtp.gmail.com", 587) as server:
+    if body:
+        msg.attach(MIMEText(body, "plain"))
+
+    if html_body:
+        msg.attach(MIMEText(html_body, "html"))
+
+    with smtplib.SMTP(smtp_host, smtp_port) as server:
         server.starttls()
-        server.login(from_email, app_password)
+        server.login(smtp_user, smtp_password)
         server.send_message(msg)
