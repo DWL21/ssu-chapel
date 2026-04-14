@@ -1,0 +1,8 @@
+{
+  "rust-analyzer.linkedProjects": [
+    "Cargo.toml",
+    "packages/rusaint/Cargo.toml",
+    "packages/rusaint-ffi/Cargo.toml",
+    "packages/rusaint-cli/Cargo.toml"
+  ]
+}

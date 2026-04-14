@@ -1,0 +1,13 @@
+name = "ssu-chapel"
+main = "build/worker/shim.mjs"
+compatibility_date = "2024-11-01"
+
+[placement]
+mode = "smart"
+
+[[kv_namespaces]]
+binding = "CHAPEL_AUTH_CACHE"
+id = "5d0d6ea6ef7c4a58a630a138cc368c8a"
+
+[build]
+command = "curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable --target wasm32-unknown-unknown && PATH=\"$HOME/.cargo/bin:$PATH\" cargo install worker-build && PATH=\"$HOME/.cargo/bin:$PATH\" worker-build --release"

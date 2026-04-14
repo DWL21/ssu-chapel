@@ -1,0 +1,51 @@
+use url::Url;
+
+use crate::{
+    body::{Body, BodyUpdate},
+    error::ClientError,
+    state::SapSsrClient,
+};
+
+pub mod blocking;
+#[cfg(feature = "reqwest")]
+pub mod reqwest;
+
+/// WASM은 단일 스레드이므로 Send 바운드를 조건부로 적용합니다.
+#[cfg(not(target_arch = "wasm32"))]
+pub trait MaybeSend: Send {}
+#[cfg(not(target_arch = "wasm32"))]
+impl<T: Send> MaybeSend for T {}
+
+#[cfg(target_arch = "wasm32")]
+pub trait MaybeSend {}
+#[cfg(target_arch = "wasm32")]
+impl<T> MaybeSend for T {}
+
+/// WebDynpro 서버에 요청하여 응답을 반환하는 트레이트
+pub trait WebDynproRequests {
+    /// WebDynpro 애플리케이션으로 이동하고 HTML 본문을 반환합니다.
+    fn navigate(
+        &self,
+        base_url: &Url,
+        name: &str,
+    ) -> impl std::future::Future<Output = Result<Body, ClientError>> + MaybeSend;
+
+    /// WebDynpro 서버에 이벤트를 전송하고 응답을 반환합니다.
+    fn send_events(
+        &self,
+        base_url: &Url,
+        ssr_client: &SapSsrClient,
+        serialized_events: &str,
+    ) -> impl std::future::Future<Output = Result<BodyUpdate, ClientError>> + MaybeSend;
+}
+
+#[cfg(any(feature = "reqwest", feature = "ureq"))]
+fn build_navigation_url(base_url: &Url, name: &str) -> String {
+    let mut url = base_url.to_string();
+    if !url.ends_with('/') {
+        url.push('/');
+    }
+    url.push_str(name);
+    url.push_str("?sap-wd-stableids=X#");
+    url
+}

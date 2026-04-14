@@ -1,0 +1,98 @@
+name: Release
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "Cargo.toml"
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: write
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Cargo.toml to check version
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            Cargo.toml
+          sparse-checkout-cone-mode: false
+      - name: Get rusaint version
+        id: current_version
+        run: yq '.package.version | "result=v" + .' Cargo.toml >> $GITHUB_OUTPUT
+      - name: Fetch latest release tag
+        id: latest_release
+        run: |
+          curl -L \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            https://api.github.com/repos/EATSTEAK/wdpe/releases \
+            | jq '.[0].tag_name | "result=" + .' \
+            | tr -d '"' >> $GITHUB_OUTPUT
+      - name: Cancel workflow if version is not updated
+        if: steps.current_version.outputs.result == steps.latest_release.outputs.result
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh run cancel ${{ github.run_id }}
+          gh run watch ${{ github.run_id }}
+      - name: Clear directory
+        run: |
+          rm -rf ./*
+          rm -rf ./.git
+      - name: Checkout
+        uses: actions/checkout@v4
+      - uses: rust-lang/crates-io-auth-action@v1
+        id: auth
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+      - name: Retrieve cache
+        uses: Leafwing-Studios/cargo-cache@v2
+
+      - name: Check if wdpe-macros version is already published
+        id: check_macros
+        run: |
+          MACROS_VERSION=$(yq '.package.version' wdpe-macros/Cargo.toml)
+          echo "Checking crates.io for wdpe-macros v$MACROS_VERSION..."
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" -H "User-Agent: wdpe-ci (https://github.com/EATSTEAK/wdpe)" "https://crates.io/api/v1/crates/wdpe-macros/$MACROS_VERSION")
+          echo "crates.io responded with HTTP $STATUS"
+          if [ "$STATUS" = "200" ]; then
+            echo "skip=true" >> $GITHUB_OUTPUT
+            echo "wdpe-macros v$MACROS_VERSION is already published, skipping."
+          else
+            echo "skip=false" >> $GITHUB_OUTPUT
+            echo "wdpe-macros v$MACROS_VERSION not found on crates.io (HTTP $STATUS), will publish."
+          fi
+
+      - name: Publish wdpe-macros
+        if: steps.check_macros.outputs.skip != 'true'
+        run: cargo publish --verbose -p wdpe-macros
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}
+
+      - name: Wait for wdpe-macros to be available on crates.io
+        if: steps.check_macros.outputs.skip != 'true'
+        run: sleep 30
+
+      - name: Publish wdpe
+        run: cargo publish --verbose
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}
+
+      - name: Create an GitHub Release
+        run: |
+          curl -L \
+            -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            https://api.github.com/repos/EATSTEAK/wdpe/releases \
+            -d '{"tag_name":"${{ steps.current_version.outputs.result }}","name":"${{ steps.current_version.outputs.result }}","generate_release_notes":true}'

@@ -1,0 +1,17 @@
+.env
+.codex
+rusaint-cli/.env
+rusaint-wasm/target/
+rusaint-wasm/build/
+rusaint-wasm/node_modules/
+
+# Wrangler cache
+.wrangler/
+
+# Request/response logs
+log/
+
+# Python
+__pycache__/
+*.pyc
+.venv/

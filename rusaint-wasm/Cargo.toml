@@ -1,0 +1,27 @@
+[package]
+name = "rusaint-wasm"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+worker = "0.7"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+console_error_panic_hook = "0.1"
+js-sys = "0.3"
+wasm-bindgen = "0.2"
+wasm-bindgen-futures = "0.4"
+rusaint = { path = "../rusaint/packages/rusaint", default-features = false, features = ["application"] }
+sha2 = { version = "0.10", default-features = false }
+
+[patch.crates-io]
+wdpe = { path = "../rusaint/packages/wdpe-patched" }
+
+[profile.release]
+lto = true
+strip = true
+codegen-units = 1
+opt-level = "s"

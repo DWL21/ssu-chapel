@@ -1,0 +1,17 @@
+# Keep the worker image build context focused on the Rust sources it actually needs.
+*
+!.dockerignore
+!rusaint/**
+!rusaint-wasm/**
+
+# Drop local artifacts and large non-build assets under the allowed trees.
+rusaint/target/**
+rusaint/docs/**
+rusaint/languages/**
+rusaint/rusaint.code-workspace
+rusaint/packages/rusaint/tests/**
+rusaint/packages/wdpe-patched/tests/**
+rusaint/packages/wdpe-patched/docs/**
+rusaint-wasm/target/**
+rusaint-wasm/node_modules/**
+rusaint-wasm/build/**

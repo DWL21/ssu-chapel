@@ -1,0 +1,110 @@
+services:
+  worker:
+    image: ghcr.io/dwl21/ssu-chapel/worker:latest
+    build:
+      context: .
+      dockerfile: rusaint-wasm/Dockerfile
+    restart: unless-stopped
+    environment:
+      WEBDIS_URL: http://webdis:7379
+    volumes:
+      - ./log:/logs
+    depends_on:
+      - webdis
+    networks:
+      - internal
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    volumes:
+      - redis-data:/data
+    command: redis-server --save 60 1 --loglevel warning
+    networks:
+      - internal
+
+  webdis:
+    image: nicolas/webdis
+    restart: unless-stopped
+    environment:
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+    depends_on:
+      - redis
+    networks:
+      - internal
+
+  scatch-crawler:
+    build:
+      context: ./backend/scatch-crawler
+    restart: unless-stopped
+    networks:
+      - internal
+
+  certbot:
+    image: certbot/certbot
+    volumes:
+      - letsencrypt:/etc/letsencrypt
+      - certbot-webroot:/var/www/certbot
+    networks:
+      - internal
+
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    ports:
+      - "${TAILSCALE_IP}:5432:5432"  # Tailscale IP (tailscale ip -4)
+    networks:
+      - internal
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    image: ghcr.io/dwl21/ssu-chapel/backend:latest
+    build:
+      context: ./backend
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - internal
+
+  nginx:
+    image: ghcr.io/dwl21/ssu-chapel/nginx:latest
+    build:
+      context: ./nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - letsencrypt:/etc/letsencrypt:ro
+      - certbot-webroot:/var/www/certbot
+    depends_on:
+      - worker
+      - backend
+    networks:
+      - internal
+
+
+networks:
+  internal:
+    driver: bridge
+
+volumes:
+  redis-data:
+  certbot-webroot:
+  letsencrypt:
+  postgres-data:
