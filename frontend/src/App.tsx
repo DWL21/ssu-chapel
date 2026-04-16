@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import PrivacyPolicyModal from './PrivacyPolicyModal';
-import EmailSubscriptionForm from './EmailSubscriptionForm';
 
 const FLOOR_2_MAX_ROW = 6;
 
