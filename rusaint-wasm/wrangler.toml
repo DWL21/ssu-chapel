@@ -10,4 +10,4 @@ binding = "CHAPEL_AUTH_CACHE"
 id = "5d0d6ea6ef7c4a58a630a138cc368c8a"
 
 [build]
-command = "curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable --target wasm32-unknown-unknown && PATH=\"$HOME/.cargo/bin:$PATH\" cargo install worker-build && PATH=\"$HOME/.cargo/bin:$PATH\" worker-build --release"
+command = "curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable --target wasm32-unknown-unknown && PATH=\"$HOME/.cargo/bin:$PATH\" cargo install worker-build@^0.7 && PATH=\"$HOME/.cargo/bin:$PATH\" worker-build --release"
