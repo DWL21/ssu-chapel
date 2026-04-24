@@ -1,5 +1,6 @@
 .env
 .codex
+.claude
 rusaint-cli/.env
 rusaint-wasm/target/
 rusaint-wasm/build/
@@ -15,3 +16,5 @@ log/
 __pycache__/
 *.pyc
 .venv/
+
+.env

@@ -31,6 +31,26 @@ function parseSeat(seatStr: string): { section: string | null; row: string | nul
   return { section: null, row: null, col: seatStr };
 }
 
+// -----------------------------------------------------------
+// 🚀 추가된 핵심 로직: 미래 날짜의 가짜 결석을 '예정'으로 바꿔줍니다!
+// -----------------------------------------------------------
+function getActualAttendance(recordDateStr: string, originalAttendance: string) {
+  if (!recordDateStr) return originalAttendance;
+  
+  // 날짜 형식 변환 (유세인트의 "YYYY.MM.DD" 등을 표준 "YYYY-MM-DD"로)
+  const formattedDateStr = recordDateStr.replace(/\./g, '-');
+  const classDate = new Date(formattedDateStr);
+  
+  const today = new Date();
+  today.setHours(0, 0, 0, 0); // 시간은 제외하고 자정 기준으로 날짜만 비교
+
+  // 만약 수업 날짜가 오늘보다 나중(미래)인데 시스템에 '결석'으로 찍혀있다면?
+  if (classDate > today && originalAttendance === '결석') {
+    return '예정'; // 강제로 '예정' 상태로 변경
+  }
+  return originalAttendance;
+}
+
 function ChapelMiniMap({
   displaySection,
   userSection,
@@ -460,6 +480,7 @@ function App() {
     if (attendance === '출석') return 'status-present';
     if (attendance === '결석') return 'status-absent';
     if (attendance === '지각') return 'status-late';
+    if (attendance === '예정') return 'status-unknown'; // 예정된 수업은 회색 뱃지
     return 'status-unknown';
   };
 
@@ -527,18 +548,20 @@ return (
         {error && <div className="alert-error">{error}</div>}
 
         {chapelData ? (() => {
-          const totalSessions    = chapelData.attendances.length;
+          const FIX_TOTAL_SESSIONS = 14; 
+          const FIX_MAX_ABSENCE = 4;     
+          const requiredAttendance = FIX_TOTAL_SESSIONS - FIX_MAX_ABSENCE;
+
           const attendedCount    = chapelData.attendances.filter(a => a.attendance === '출석').length;
-          const requiredAttendance = Math.ceil(totalSessions * 0.8);
           const isOfficiallyPassed = chapelData.general_information.result === 'P';
 
           const completedSessions = chapelData.attendances.filter(a => a.attendance && a.attendance !== '-').length;
-          const remainingSessions = totalSessions - completedSessions;
+          const remainingSessions = FIX_TOTAL_SESSIONS - completedSessions;
           const possibleFinalAttendance = attendedCount + remainingSessions;
           const isFWarning = possibleFinalAttendance < requiredAttendance;
 
           const absentCount      = chapelData.general_information.absence_time;
-          const remainingAbsences  = (totalSessions - requiredAttendance) - absentCount;
+          const remainingAbsences  = FIX_MAX_ABSENCE - absentCount;
 
           return (
             <>
@@ -584,27 +607,31 @@ return (
 
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '12px', marginBottom: '8px' }}>
                     {chapelData.attendances.map((record, idx) => {
+                      // 🚀 실제 출결 상태 가져오기 (미래 날짜는 '예정'으로 변환)
+                      const actualAttendance = getActualAttendance(record.class_date, record.attendance);
+
                       let bgColor = isDarkMode ? '#334155' : '#f8fafc';
                       let textColor = isDarkMode ? '#64748b' : '#cbd5e1';
                       let content: string | number = idx + 1;
                       let borderStyle = `1px dashed ${isDarkMode ? '#475569' : '#cbd5e1'}`;
 
-                      if (record.attendance === '출석') {
+                      if (actualAttendance === '출석') {
                         bgColor = isDarkMode ? '#1e3a8a' : '#eff6ff';
                         textColor = isDarkMode ? '#60a5fa' : '#3b82f6';
                         content = '출';
                         borderStyle = `1px solid ${isDarkMode ? '#2563eb' : '#bfdbfe'}`;
-                      } else if (record.attendance === '결석') {
+                      } else if (actualAttendance === '결석') {
                         bgColor = isDarkMode ? '#7f1d1d' : '#fef2f2';
                         textColor = isDarkMode ? '#f87171' : '#ef4444';
                         content = '결';
                         borderStyle = `1px solid ${isDarkMode ? '#b91c1c' : '#fecaca'}`;
-                      } else if (record.attendance === '지각') {
+                      } else if (actualAttendance === '지각') {
                         bgColor = isDarkMode ? '#78350f' : '#fffbeb';
                         textColor = isDarkMode ? '#fbbf24' : '#f59e0b';
                         content = '지';
                         borderStyle = `1px solid ${isDarkMode ? '#d97706' : '#fde68a'}`;
-                      }
+                      } 
+                      // '예정'이거나 빈칸일 경우에는 기본값(회색 숫자) 유지!
 
                       return (
                         <div key={idx} style={{
@@ -680,26 +707,30 @@ return (
           <>
             <h3 style={{ marginBottom: '1rem', color: theme.text, fontSize: '1rem', marginTop: '1.5rem' }}>출결 기록</h3>
             <div className="attendance-list" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              {chapelData.attendances.map((record, index) => (
-                <div key={index} className="attendance-card" style={{
-                    backgroundColor: theme.bg,
-                    border: `1px solid ${theme.border}`,
-                    borderRadius: '8px',
-                    padding: '1rem'
-                }}>
-                  <div className="attendance-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                    <span className="attendance-date" style={{ color: theme.text, fontWeight: 'bold' }}>{record.class_date}</span>
-                    <span className={`attendance-status ${getStatusColor(record.attendance)}`}>{record.attendance || '-'}</span>
+              {chapelData.attendances.map((record, index) => {
+                const actualAttendance = getActualAttendance(record.class_date, record.attendance);
+
+                return (
+                  <div key={index} className="attendance-card" style={{
+                      backgroundColor: theme.bg,
+                      border: `1px solid ${theme.border}`,
+                      borderRadius: '8px',
+                      padding: '1rem'
+                  }}>
+                    <div className="attendance-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                      <span className="attendance-date" style={{ color: theme.text, fontWeight: 'bold' }}>{record.class_date}</span>
+                      <span className={`attendance-status ${getStatusColor(actualAttendance)}`}>{actualAttendance || '-'}</span>
+                    </div>
+                    <div className="attendance-details" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.85rem', color: theme.subText }}>
+                      <span>{record.title}</span>
+                      <span>
+                        {record.instructor}
+                        {record.instructor_department ? ` (${record.instructor_department})` : ''}
+                      </span>
+                    </div>
                   </div>
-                  <div className="attendance-details" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.85rem', color: theme.subText }}>
-                    <span>{record.title}</span>
-                    <span>
-                      {record.instructor}
-                      {record.instructor_department ? ` (${record.instructor_department})` : ''}
-                    </span>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </>
         )}
