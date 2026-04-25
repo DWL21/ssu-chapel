@@ -1,31 +1,40 @@
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+import os
+from dotenv import load_dotenv
 
-from app.config import settings
+load_dotenv()
 
+def send_email(to_email: str, subject: str, body: str = "", html_body: str = ""):
+    """Send email using SMTP (Gmail).
 
-def _smtp_send(msg: MIMEMultipart | MIMEText):
-    with smtplib.SMTP("smtp.gmail.com", 587) as server:
-        server.starttls()
-        server.login(settings.email_from, settings.email_password)
-        server.send_message(msg)
+    Args:
+        to_email: Recipient email address
+        subject: Email subject
+        body: Plain text email body
+        html_body: HTML email body (if provided, takes precedence)
+    """
+    smtp_host = os.getenv("SMTP_HOST", "smtp.gmail.com")
+    smtp_port = int(os.getenv("SMTP_PORT", 587))
+    smtp_user = os.getenv("SMTP_USER")
+    smtp_password = os.getenv("SMTP_PASSWORD")
 
+    if not smtp_user or not smtp_password:
+        raise ValueError("SMTP_USER and SMTP_PASSWORD environment variables are required")
 
-def send_email(to_email: str, subject: str, html_body: str):
     msg = MIMEMultipart("alternative")
     msg["Subject"] = subject
-    msg["From"] = settings.email_from
+    msg["From"] = smtp_user
     msg["To"] = to_email
-    msg.attach(MIMEText(html_body, "html"))
-    _smtp_send(msg)
 
+    if body:
+        msg.attach(MIMEText(body, "plain"))
 
-def send_auth_code(to_email: str, code: str):
-    msg = MIMEText(
-        f"숭실대 공지사항 구독 인증번호: {code}\n\n10분 내에 입력해주세요.",
-    )
-    msg["Subject"] = f"[숭실대 공지] 인증번호: {code}"
-    msg["From"] = settings.email_from
-    msg["To"] = to_email
-    _smtp_send(msg)
+    if html_body:
+        msg.attach(MIMEText(html_body, "html"))
+
+    with smtplib.SMTP(smtp_host, smtp_port) as server:
+        server.starttls()
+        server.login(smtp_user, smtp_password)
+        server.send_message(msg)
