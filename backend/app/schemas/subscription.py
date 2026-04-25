@@ -20,6 +20,7 @@ class Category(str, Enum):
 class SubscribeRequest(BaseModel):
     email: EmailStr
     categories: list[Category]
+    auth_code: str
 
 
 class UnsubscribeRequest(BaseModel):

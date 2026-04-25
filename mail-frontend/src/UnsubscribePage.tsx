@@ -21,7 +21,7 @@ export default function UnsubscribePage({ apiBase, token }: Props) {
         const body = await res.json().catch(() => ({}));
         if (cancelled) return;
         if (!res.ok) {
-          setState({ kind: 'error', message: body.error || '해지 처리에 실패했습니다.' });
+          setState({ kind: 'error', message: body.detail || '해지 처리에 실패했습니다.' });
           return;
         }
         setState({ kind: 'success', email: body.email });

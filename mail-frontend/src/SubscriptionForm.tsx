@@ -48,7 +48,7 @@ export default function SubscriptionForm({ apiBase, onSuccess }: Props) {
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        throw new Error(err.error || '인증번호 발송에 실패했습니다.');
+        throw new Error(err.detail || '인증번호 발송에 실패했습니다.');
       }
       setMsg({ type: 'info', text: '이메일로 6자리 인증번호를 발송했습니다. (최대 5분 소요)' });
       setStep('verify');
@@ -80,7 +80,7 @@ export default function SubscriptionForm({ apiBase, onSuccess }: Props) {
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        throw new Error(err.error || '인증에 실패했거나 인증번호가 만료되었습니다.');
+        throw new Error(err.detail || '인증에 실패했거나 인증번호가 만료되었습니다.');
       }
       setMsg({
         type: 'success',
