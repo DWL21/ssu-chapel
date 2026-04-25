@@ -1,4 +1,4 @@
-from fastapi import Depends, FastAPI, HTTPException, Query
+from fastapi import Depends, FastAPI, Header, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from sqlalchemy import select, delete
@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 import threading
 import logging
 
+from app.config import settings
 from app.database import get_db
 from app.models.subscription import Subscriber, Subscription
 from app.routers import auth, subscription, notice, test_page
@@ -55,7 +56,9 @@ async def unsubscribe_by_token(
 
 
 @app.post("/admin/run-cron")
-async def run_cron():
+async def run_cron(x_cron_secret: str = Header(default="")):
+    if not settings.cron_secret or x_cron_secret != settings.cron_secret:
+        raise HTTPException(401, "인증 실패")
     if _collect_and_send is None:
         raise HTTPException(503, "스케줄러 모듈 로드 실패")
     await _collect_and_send()
