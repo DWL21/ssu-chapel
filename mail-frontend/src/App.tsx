@@ -489,9 +489,6 @@ function StepEmail({
       <div className="form-card__head">
         <h3 className="form-card__title">어디로 보내드릴까요?</h3>
       </div>
-      <p className="form-card__sub">
-        선택한 카테고리 {selectedCount}개의 새 공지를 매일 08:00 이 주소로 보내드립니다.
-      </p>
       <div className="field" style={{ position: 'relative' }}>
         <label className="field__label" htmlFor="emailInput">이메일 주소</label>
         <input id="emailInput" className="input" type="email"
