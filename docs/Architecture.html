@@ -1,0 +1,488 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>숭실메일 · System Architecture</title>
+    <link rel="stylesheet" as="style" crossorigin
+      href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
+    <link rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap" />
+    <style>
+      :root {
+        --teal: #4ec6c1; --teal-2: #3aa9a4; --teal-3: #2e8c87;
+        --teal-50: #eaf7f6; --teal-100: #d6efed;
+        --ink: #1f2937; --ink-2: #374151; --ink-3: #4b5563;
+        --muted: #6b7280; --faded: #9ca3af;
+        --line: #e5e7eb; --line-2: #d1d5db;
+        --bg: #f5f5f5; --panel: #ffffff;
+        --warn: #e74c3c; --amber: #d97706;
+        --indigo: #6366f1; --blue: #3b82f6;
+        --sans: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+        --mono: "JetBrains Mono", ui-monospace, monospace;
+      }
+      * { box-sizing: border-box; }
+      html, body { margin: 0; padding: 0; }
+      body {
+        font-family: var(--sans);
+        background: #e2e2e2;
+        color: var(--ink);
+        min-height: 100vh;
+        display: flex;
+        justify-content: center;
+        padding: 28px 16px;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      .poster-wrap { width: 100%; max-width: 1600px; }
+      .poster {
+        position: relative;
+        width: 1600px; height: 1080px;
+        background: var(--bg);
+        border-radius: 14px;
+        box-shadow: 0 30px 80px -40px rgba(0,0,0,.28);
+        overflow: hidden;
+        transform-origin: top center;
+      }
+      @media (max-width: 1632px) {
+        .poster { transform: scale(calc((100vw - 32px) / 1600)); }
+        .poster-wrap { height: calc(1080px * (100vw - 32px) / 1600); }
+      }
+
+      /* Header */
+      .head {
+        position: absolute; top: 0; left: 0; right: 0;
+        height: 60px; padding: 0 48px;
+        background: var(--panel);
+        border-bottom: 1px solid var(--line);
+        display: flex; align-items: center; justify-content: space-between;
+      }
+      .head__brand { display: flex; align-items: center; gap: 10px; }
+      .head__brand-name { font-size: 17px; font-weight: 800; letter-spacing: -.02em; }
+      .head__brand-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--teal); }
+      .head__brand-slug { font-family: var(--mono); font-size: 13px; color: var(--muted); }
+      .head__doc {
+        font-family: var(--mono); font-size: 11px; font-weight: 600;
+        letter-spacing: .1em; text-transform: uppercase; color: var(--teal-3);
+      }
+
+      /* Stage */
+      .stage {
+        position: absolute;
+        top: 60px; left: 0; right: 0; bottom: 34px;
+      }
+
+      /* Zones */
+      .zone {
+        position: absolute;
+        border-radius: 12px;
+        background: rgba(255,255,255,.5);
+        border: 1px dashed var(--line-2);
+      }
+      .zone__label {
+        position: absolute; top: -11px; left: 20px;
+        background: var(--bg); padding: 0 8px;
+        font-family: var(--mono); font-size: 9.5px; font-weight: 700;
+        letter-spacing: .18em; color: var(--muted); text-transform: uppercase;
+      }
+
+      /* Zone bands — full width, 40px side margins */
+      .zone--client  { left: 40px; top: 80px;  width: 1520px; height: 168px; }
+      .zone--network { left: 40px; top: 262px; width: 1520px; height: 56px;
+                       background: rgba(78,198,193,.05); border-color: var(--teal-100); }
+      .zone--app     { left: 40px; top: 330px; width: 1520px; height: 276px; }
+      .zone--data    { left: 40px; top: 618px; width: 1520px; height: 300px; }
+
+      /* Cards */
+      .card {
+        position: absolute;
+        background: #fff; border: 1px solid var(--line);
+        border-radius: 10px; padding: 14px 16px 13px;
+        box-shadow: 0 1px 3px rgba(0,0,0,.03);
+      }
+      .card--teal   { border-top: 3px solid var(--teal); }
+      .card--blue   { border-top: 3px solid var(--blue); }
+      .card--amber  { border-top: 3px solid var(--amber); }
+      .card--warn   { border-top: 3px solid var(--warn); }
+      .card--indigo { border-top: 3px solid var(--indigo); }
+
+      .card__kicker {
+        font-family: var(--mono); font-size: 9px; font-weight: 600;
+        letter-spacing: .12em; color: var(--muted); text-transform: uppercase;
+        margin-bottom: 5px;
+      }
+      .card__title {
+        font-size: 14px; font-weight: 700; letter-spacing: -.015em;
+        color: var(--ink); margin: 0;
+      }
+      .card__title small {
+        font-family: var(--mono); font-size: 10px; font-weight: 500;
+        color: var(--muted); margin-left: 8px;
+      }
+
+      /* Pill */
+      .pill {
+        display: inline-block; font-family: var(--mono);
+        font-size: 10px; font-weight: 600; padding: 2px 8px;
+        border-radius: 4px; letter-spacing: .02em;
+      }
+      .pill--teal { background: var(--teal); color: #fff; }
+      .pill--out  { background: #fff; color: var(--teal-3); border: 1px solid var(--teal); }
+      .pill--ink  { background: var(--ink); color: #fff; }
+
+      /* Endpoints */
+      .endpoint {
+        display: flex; gap: 7px; align-items: center;
+        font-family: var(--mono); font-size: 10.5px; color: var(--ink-3);
+        padding: 3px 0;
+      }
+      .endpoint__verb {
+        font-weight: 700; font-size: 9px; padding: 2px 6px;
+        border-radius: 3px; color: #fff; flex-shrink: 0;
+        min-width: 40px; text-align: center;
+      }
+      .verb-GET    { background: var(--blue); }
+      .verb-POST   { background: var(--teal); }
+      .verb-DELETE { background: var(--warn); }
+
+      /* FE routes grid */
+      .fe-routes {
+        margin-top: 9px;
+        display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px;
+      }
+      .fe-route {
+        background: var(--teal-50); border: 1px solid var(--teal-100);
+        border-radius: 5px; font-family: var(--mono); font-size: 10px;
+        color: var(--teal-3); padding: 4px 6px; text-align: center; font-weight: 600;
+      }
+      .fe-route--alt { background: #f9fafb; color: var(--ink-3); border-color: var(--line); }
+
+      /* CF tunnel bar */
+      .cf-bar {
+        display: flex; align-items: center; gap: 12px;
+        height: 100%; padding: 0 16px;
+      }
+      .cf-bar__name { font-weight: 700; font-size: 13px; }
+      .cf-bar__url  { margin-left: auto; font-family: var(--mono); font-size: 11px; color: var(--teal-3); }
+
+      /* Ticks */
+      .ticks {
+        display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 9px;
+      }
+      .tick {
+        background: var(--ink); color: #fff;
+        font-family: var(--mono); font-size: 10px; font-weight: 500;
+        padding: 6px 7px; border-radius: 5px; text-align: center;
+      }
+      .tick b { display: block; font-size: 11px; font-weight: 700; margin-bottom: 2px; }
+
+      /* DB tables */
+      .tables {
+        display: grid; grid-template-columns: repeat(2, 1fr); gap: 7px; margin-top: 9px;
+      }
+      .table {
+        background: #f9fafb; border: 1px solid var(--line);
+        border-radius: 6px; padding: 6px 9px; font-family: var(--mono); font-size: 10px;
+      }
+      .table__name {
+        font-size: 10.5px; font-weight: 700; color: var(--ink);
+        margin-bottom: 3px; display: flex; align-items: center; gap: 5px;
+      }
+      .table__name::before { content: "▤"; color: var(--teal-3); }
+      .table__col { color: var(--ink-3); line-height: 1.5; }
+      .table__col i { color: var(--muted); font-style: normal; font-size: 9px; margin-left: 3px; }
+
+      /* Badge row */
+      .badge-row { display: flex; gap: 5px; margin-top: 9px; }
+
+      /* User icon */
+      .user-icon {
+        width: 32px; height: 32px; border-radius: 50%;
+        background: var(--teal-50); color: var(--teal-3);
+        display: grid; place-items: center; font-size: 15px; margin-bottom: 8px;
+      }
+
+      /* Card positions */
+
+      /* Presentation */
+      .c-user     { left: 56px;   top: 100px; width: 174px; height: 114px; }
+      .c-frontend { left: 254px;  top: 100px; width: 780px; height: 114px; }
+      .c-pages    { left: 1058px; top: 100px; width: 478px; height: 114px; border-style: dashed; background: #f9fafb; }
+
+      /* Network */
+      .c-cf       { left: 56px;   top: 274px; width: 1488px; height: 38px; border-radius: 8px; padding: 0; }
+
+      /* Application — left col (router), right col (scheduler / sendmail) */
+      .c-router    { left: 56px;  top: 352px; width: 496px; height: 248px; }
+      .c-scheduler { left: 576px; top: 352px; width: 960px; height: 116px; }
+      .c-sendmail  { left: 576px; top: 484px; width: 960px; height: 108px; }
+
+      /* Data */
+      .c-pg      { left: 56px;  top: 640px; width: 496px; height: 244px; }
+      .c-crawler { left: 576px; top: 640px; width: 360px; height: 244px; }
+      .c-smtp    { left: 960px; top: 640px; width: 576px; height: 244px; }
+
+      /* Arrow overlay */
+      .arrows {
+        position: absolute; top: 60px; left: 0; right: 0; bottom: 34px;
+        pointer-events: none;
+      }
+
+      /* Footer */
+      .foot {
+        position: absolute; bottom: 0; left: 0; right: 0;
+        height: 34px; background: var(--panel); border-top: 1px solid var(--line);
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 0 48px; font-family: var(--mono); font-size: 10.5px; color: var(--muted);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="poster-wrap">
+      <div class="poster">
+
+        <header class="head">
+          <div class="head__brand">
+            <span class="head__brand-name">숭실메일</span>
+            <span class="head__brand-dot"></span>
+            <span class="head__brand-slug">ssu-mail</span>
+          </div>
+          <span class="head__doc">System Architecture</span>
+        </header>
+
+        <main class="stage">
+
+          <!-- Presentation Layer -->
+          <div class="zone zone--client">
+            <span class="zone__label">Presentation Layer</span>
+          </div>
+
+          <div class="card c-user card--teal">
+            <div class="user-icon">👤</div>
+            <div style="font-weight:700;font-size:14px">학생 사용자</div>
+          </div>
+
+          <div class="card c-frontend card--teal">
+            <div class="card__kicker">React 18 + Vite + TypeScript</div>
+            <h3 class="card__title">숭실메일 SPA <small>ssu-mail.simplyimg.com</small></h3>
+            <div class="fe-routes">
+              <div class="fe-route">Hero</div>
+              <div class="fe-route">How it works</div>
+              <div class="fe-route">Subscribe</div>
+              <div class="fe-route">FAQ</div>
+              <div class="fe-route fe-route--alt">Categories</div>
+              <div class="fe-route fe-route--alt">Email</div>
+              <div class="fe-route fe-route--alt">Auth code</div>
+              <div class="fe-route fe-route--alt">Unsubscribe</div>
+            </div>
+          </div>
+
+          <div class="card c-pages">
+            <div class="card__kicker">Cloudflare Pages</div>
+            <div class="card__title" style="font-size:13px">Static Hosting</div>
+            <div style="font-family:var(--mono);font-size:10px;color:var(--teal-3);margin-top:8px">
+              ssu-mail.simplyimg.com
+            </div>
+          </div>
+
+          <!-- Network Layer -->
+          <div class="zone zone--network">
+            <span class="zone__label">Network Layer</span>
+          </div>
+          <div class="card c-cf">
+            <div class="cf-bar">
+              <span class="pill pill--ink">CF Tunnel</span>
+              <span class="cf-bar__name">Cloudflare Tunnel</span>
+              <span class="cf-bar__url">api.ssu-mail → backend:8000</span>
+            </div>
+          </div>
+
+          <!-- Application Layer -->
+          <div class="zone zone--app">
+            <span class="zone__label">Application Layer</span>
+          </div>
+
+          <div class="card c-router card--teal">
+            <div class="card__kicker">FastAPI</div>
+            <h3 class="card__title">HTTP Routers</h3>
+            <div style="display:grid;gap:1px;margin-top:8px">
+              <div class="endpoint">
+                <span class="endpoint__verb verb-POST">POST</span>/auth/request-code
+              </div>
+              <div class="endpoint">
+                <span class="endpoint__verb verb-POST">POST</span>/subscriptions
+              </div>
+              <div class="endpoint">
+                <span class="endpoint__verb verb-GET">GET</span>/subscriptions/me
+              </div>
+              <div class="endpoint">
+                <span class="endpoint__verb verb-DELETE">DELETE</span>/subscriptions
+              </div>
+              <div class="endpoint">
+                <span class="endpoint__verb verb-DELETE">DELETE</span>/subscriptions/me
+              </div>
+              <div class="endpoint">
+                <span class="endpoint__verb verb-GET">GET</span>/unsubscribe?token
+              </div>
+              <div class="endpoint">
+                <span class="endpoint__verb verb-POST">POST</span>/admin/run-cron
+              </div>
+            </div>
+          </div>
+
+          <div class="card c-scheduler card--amber">
+            <div class="card__kicker">APScheduler</div>
+            <h3 class="card__title">Scheduler</h3>
+            <div class="ticks">
+              <div class="tick"><b>08:00 KST</b>daily send</div>
+              <div class="tick"><b>on subscribe</b>immediate blast</div>
+              <div class="tick"><b>boot</b>seed notices</div>
+            </div>
+          </div>
+
+          <div class="card c-sendmail card--teal">
+            <div class="card__kicker">SMTP Client</div>
+            <h3 class="card__title">Mail Builder</h3>
+            <div class="badge-row">
+              <span class="pill pill--teal">build_email_html</span>
+              <span class="pill pill--out">send_email</span>
+              <span class="pill pill--out">send_auth_code</span>
+            </div>
+          </div>
+
+          <!-- Data Layer -->
+          <div class="zone zone--data">
+            <span class="zone__label">Data Layer</span>
+          </div>
+
+          <div class="card c-pg card--blue">
+            <div class="card__kicker">PostgreSQL 17</div>
+            <h3 class="card__title">PostgreSQL</h3>
+            <div class="tables">
+              <div class="table">
+                <div class="table__name">subscribers</div>
+                <div class="table__col">id <i>PK</i></div>
+                <div class="table__col">email <i>unique</i></div>
+                <div class="table__col">unsub_token <i>unique</i></div>
+              </div>
+              <div class="table">
+                <div class="table__name">subscriptions</div>
+                <div class="table__col">subscriber_id <i>FK</i></div>
+                <div class="table__col">category <i>10종</i></div>
+                <div class="table__col"><i>uq(subscriber, category)</i></div>
+              </div>
+              <div class="table">
+                <div class="table__name">auth_codes</div>
+                <div class="table__col">email · code</div>
+                <div class="table__col">expires_at <i>10min TTL</i></div>
+              </div>
+              <div class="table">
+                <div class="table__name">notices</div>
+                <div class="table__col">seed cache</div>
+                <div class="table__col"><i>dedup guard</i></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card c-crawler card--indigo">
+            <div class="card__kicker">External container</div>
+            <h3 class="card__title">Notice Crawler</h3>
+            <div style="margin-top:10px">
+              <div class="endpoint">
+                <span class="endpoint__verb verb-GET">GET</span>/notices
+              </div>
+            </div>
+          </div>
+
+          <div class="card c-smtp card--warn">
+            <div class="card__kicker">External · Gmail</div>
+            <h3 class="card__title">Gmail SMTP</h3>
+          </div>
+
+        </main>
+
+        <!--
+          Arrow SVG
+          SVG origin = stage top (poster y=60).
+          Card "top" values map 1-to-1 to SVG y.
+
+          Card centers (x, y):
+            User:       (143, 157)   right=230
+            Frontend:   (644, 157)   left=254  right=1034
+            Pages:      (1297, 157)  left=1058
+            CF bar:     (800, 293)   top=274   bottom=312
+            Router:     (304, 476)   top=352   bottom=600   left=56   right=552
+            Scheduler:  (1056, 410)  top=352   bottom=468   left=576  right=1536
+            SendMail:   (1056, 538)  top=484   bottom=592   left=576  right=1536
+            PG:         (304, 738)   top=640   bottom=836
+            Crawler:    (756, 738)   top=640   bottom=836   left=576  right=936
+            SMTP:       (1248, 738)  top=640   bottom=836
+        -->
+        <svg class="arrows" viewBox="0 0 1600 986" preserveAspectRatio="none">
+          <defs>
+            <marker id="at" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+              <path d="M0,0 L10,5 L0,10 z" fill="#3aa9a4"/>
+            </marker>
+            <marker id="ak" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+              <path d="M0,0 L10,5 L0,10 z" fill="#374151"/>
+            </marker>
+            <marker id="aa" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+              <path d="M0,0 L10,5 L0,10 z" fill="#d97706"/>
+            </marker>
+            <marker id="aw" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+              <path d="M0,0 L10,5 L0,10 z" fill="#e74c3c"/>
+            </marker>
+          </defs>
+
+          <!-- User ↔ Frontend -->
+          <line x1="230" y1="157" x2="254" y2="157"
+            stroke="#3aa9a4" stroke-width="1.8"
+            marker-end="url(#at)" marker-start="url(#at)"/>
+
+          <!-- Frontend ⟶ Pages (deploy, dashed) -->
+          <line x1="1034" y1="157" x2="1058" y2="157"
+            stroke="#9ca3af" stroke-width="1.4" stroke-dasharray="4 3"/>
+
+          <!-- Frontend ⟶ CF Tunnel -->
+          <line x1="644" y1="214" x2="644" y2="272"
+            stroke="#3aa9a4" stroke-width="1.8" marker-end="url(#at)"/>
+
+          <!-- CF Tunnel ⟶ Router -->
+          <line x1="304" y1="312" x2="304" y2="350"
+            stroke="#3aa9a4" stroke-width="1.8" marker-end="url(#at)"/>
+
+          <!-- Router ⟶ Scheduler (BackgroundTask, dashed) -->
+          <line x1="552" y1="410" x2="574" y2="410"
+            stroke="#374151" stroke-width="1.4" stroke-dasharray="3 3" marker-end="url(#ak)"/>
+
+          <!-- Router ⟶ SendMail -->
+          <line x1="552" y1="538" x2="574" y2="538"
+            stroke="#3aa9a4" stroke-width="1.8" marker-end="url(#at)"/>
+
+          <!-- Router ↔ PostgreSQL -->
+          <line x1="304" y1="600" x2="304" y2="638"
+            stroke="#374151" stroke-width="1.8"
+            marker-end="url(#ak)" marker-start="url(#ak)"/>
+
+          <!-- Scheduler ⟶ SendMail (dashed, direct call) -->
+          <line x1="1056" y1="468" x2="1056" y2="482"
+            stroke="#374151" stroke-width="1.4" stroke-dasharray="3 3"/>
+
+          <!-- Scheduler ⟶ Crawler: route through gap (x=564) between Router and Scheduler -->
+          <path d="M576 468 L564 468 L564 738 L574 738"
+            fill="none" stroke="#d97706" stroke-width="1.8" marker-end="url(#aa)"/>
+
+          <!-- SendMail ⟶ SMTP -->
+          <line x1="1248" y1="592" x2="1248" y2="638"
+            stroke="#e74c3c" stroke-width="1.8" marker-end="url(#aw)"/>
+
+        </svg>
+
+        <footer class="foot">
+          <span>github.com/DWL21/ssu-chapel</span>
+          <span>NOT AN OFFICIAL SOONGSIL UNIVERSITY SERVICE</span>
+        </footer>
+      </div>
+    </div>
+  </body>
+</html>
