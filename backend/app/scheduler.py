@@ -215,9 +215,8 @@ async def _fetch_until_cutoff(
 
 
 async def send_now_to_subscriber(subscriber_id: int, categories: set[str]) -> None:
-    """구독 완료 직후 백필 발송 — '게시일 7일 이내' 이면서 '이미 notices 에 기록된'
-    link 만 보낸다. 아직 notices 에 없는 link 는 다음 크론에서 전 구독자에게
-    함께 발송되므로 여기서 건드리지 않는다. INSERT 도 하지 않는다."""
+    """구독 완료 직후 백필 발송 — 게시일 7일 이내의 공지를 모두 발송.
+    발송 후 notices 에 없는 링크를 삽입하여 다음 크론의 재발송을 방지한다."""
     async with AsyncSessionLocal() as db:
         result = await db.execute(
             select(Subscriber).where(Subscriber.id == subscriber_id)
@@ -225,7 +224,6 @@ async def send_now_to_subscriber(subscriber_id: int, categories: set[str]) -> No
         subscriber = result.scalar_one_or_none()
         if subscriber is None:
             return
-        existing_links = await _existing_links(db)
 
     cutoff = date.today() - timedelta(days=7)
     notices = await _fetch_until_cutoff(categories, cutoff)
@@ -236,13 +234,10 @@ async def send_now_to_subscriber(subscriber_id: int, categories: set[str]) -> No
         except (ValueError, TypeError):
             return False
 
-    notices = [
-        n for n in notices
-        if n.get("link") and n["link"] in existing_links and _within_window(n)
-    ]
+    notices = [n for n in notices if n.get("link") and _within_window(n)]
 
     if not notices:
-        logger.info("즉시 발송 스킵: 최근 3일 공지 없음 (%s)", subscriber.email)
+        logger.info("즉시 발송 스킵: 최근 7일 공지 없음 (%s)", subscriber.email)
         return
 
     today = date.today()
@@ -254,6 +249,14 @@ async def send_now_to_subscriber(subscriber_id: int, categories: set[str]) -> No
         logger.info("즉시 발송 완료: %s (%d건)", subscriber.email, len(notices))
     except Exception:
         logger.exception("즉시 발송 실패: %s", subscriber.email)
+        return
+
+    sent_links = {n["link"] for n in notices}
+    async with AsyncSessionLocal() as db:
+        existing = await _existing_links(db)
+        new_links = sent_links - existing
+        if new_links:
+            await _record_new_links(db, new_links)
 
 
 async def resend_today_to_all() -> int:

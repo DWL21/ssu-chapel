@@ -463,11 +463,10 @@ function StepCategories({
 const EMAIL_DOMAINS = ['@soongsil.ac.kr', '@gmail.com', '@naver.com', '@kakao.com'];
 
 function StepEmail({
-  email, setEmail, selectedCount,
+  email, setEmail,
 }: {
   email: string;
   setEmail: (v: string) => void;
-  selectedCount: number;
 }) {
   const [suggestions, setSuggestions] = useState<string[]>([]);
 
@@ -774,7 +773,7 @@ function Subscribe() {
                 <p>{barSub}</p>
               </div>
               <div className="form-card__inner">
-                {step === 1 && <StepEmail email={email} setEmail={setEmail} selectedCount={selected.length} />}
+                {step === 1 && <StepEmail email={email} setEmail={setEmail} />}
                 {step === 2 && <StepCode email={email} code={code} setCode={setCode} onEditEmail={() => { setError(null); setStep(1); }} />}
                 {step === 3 && (
                   <>
