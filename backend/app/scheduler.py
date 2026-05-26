@@ -11,7 +11,7 @@ from app.models.notice import Notice
 from app.models.subscription import Subscriber, Subscription
 from app.services.notice_collector import fetch_notices_from_crawler
 from app.email_template import build_email_html
-from app.SendMail import send_email
+from app.SendMail import send_email_with_retry
 
 logger = logging.getLogger(__name__)
 
@@ -108,7 +108,7 @@ async def _collect_and_send():
             subject = f"숭실대 공지사항 ({today.strftime('%Y.%m.%d')}) — {len(matched)}건"
 
             try:
-                send_email(subscriber.email, subject, html_body=html)
+                send_email_with_retry(subscriber.email, subject, html_body=html)
                 sent_link_pool |= seen
                 logger.info("발송 완료: %s (%d건)", subscriber.email, len(matched))
             except Exception:
@@ -245,7 +245,7 @@ async def send_now_to_subscriber(subscriber_id: int, categories: set[str]) -> No
     subject = f"숭실대 공지사항 구독 완료 ({today.strftime('%Y.%m.%d')}) — {len(notices)}건"
 
     try:
-        send_email(subscriber.email, subject, html_body=html)
+        send_email_with_retry(subscriber.email, subject, html_body=html)
         logger.info("즉시 발송 완료: %s (%d건)", subscriber.email, len(notices))
     except Exception:
         logger.exception("즉시 발송 실패: %s", subscriber.email)
@@ -288,7 +288,7 @@ async def resend_today_to_all() -> int:
         html = build_email_html(notices, target_date=today, unsub_token=sub.unsub_token)
         subject = f"숭실대 공지사항 ({today.strftime('%Y.%m.%d')}) — {len(notices)}건"
         try:
-            send_email(sub.email, subject, html_body=html)
+            send_email_with_retry(sub.email, subject, html_body=html)
             sent += 1
             logger.info("재발송 완료: %s (%d건)", sub.email, len(notices))
         except Exception:

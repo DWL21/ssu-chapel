@@ -1,4 +1,6 @@
+import logging
 import smtplib
+import time
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.utils import formataddr
@@ -6,6 +8,41 @@ import os
 from dotenv import load_dotenv
 
 load_dotenv()
+
+logger = logging.getLogger(__name__)
+
+
+def send_email_with_retry(
+    to_email: str,
+    subject: str,
+    body: str = "",
+    html_body: str = "",
+    *,
+    attempts: int = 3,
+    backoff: float = 2.0,
+):
+    """Send email with retry on transient SMTP / network errors.
+
+    Retries only on smtplib.SMTPException and OSError. Configuration errors
+    (e.g. missing credentials raising ValueError) propagate immediately.
+    """
+    last_exc: Exception | None = None
+    for i in range(attempts):
+        try:
+            send_email(to_email, subject, body=body, html_body=html_body)
+            if i > 0:
+                logger.info("SMTP 재시도 성공 (%d회차): %s", i + 1, to_email)
+            return
+        except (smtplib.SMTPException, OSError) as e:
+            last_exc = e
+            logger.warning(
+                "SMTP 실패 (%d/%d) %s: %s", i + 1, attempts, to_email, e
+            )
+            if i < attempts - 1:
+                time.sleep(backoff * (2 ** i))
+    assert last_exc is not None
+    raise last_exc
+
 
 def send_email(to_email: str, subject: str, body: str = "", html_body: str = ""):
     """Send email using SMTP (Gmail).
