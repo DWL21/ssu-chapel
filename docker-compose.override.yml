@@ -1,12 +1,16 @@
 services:
   worker:
     profiles: ["full"]
+    ports:
+      - "8788:8787"
   redis:
     profiles: ["full"]
   webdis:
     profiles: ["full"]
   cloudflared:
     profiles: ["full"]
+    depends_on:
+      - worker
 
   postgres:
     ports: !override

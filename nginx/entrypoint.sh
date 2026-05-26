@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-CERT="/etc/letsencrypt/live/api.ssu-chapel.kro.kr/fullchain.pem"
+CERT="/etc/letsencrypt/live/ssu-chapel-api.simplyimg.com/fullchain.pem"
 
 if [ -f "$CERT" ]; then
     echo "[nginx] SSL 인증서 감지 → HTTPS 모드"

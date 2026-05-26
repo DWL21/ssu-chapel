@@ -3,8 +3,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from sqlalchemy import select, delete
 from sqlalchemy.ext.asyncio import AsyncSession
+import asyncio
 import threading
 import logging
+
+logging.basicConfig(level=logging.INFO)
 
 from app.config import settings
 from app.database import get_db
@@ -112,6 +115,6 @@ async def initial_seed():
 def start_scheduler():
     if run_scheduler is None:
         return
-    t = threading.Thread(target=run_scheduler)
-    t.daemon = True
+    loop = asyncio.get_event_loop()
+    t = threading.Thread(target=run_scheduler, args=(loop,), daemon=True)
     t.start()

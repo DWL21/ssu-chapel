@@ -1,0 +1,479 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>숭실메일 · ERD</title>
+    <link rel="stylesheet" as="style" crossorigin
+      href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
+    <link rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap" />
+    <style>
+      :root {
+        --teal: #4ec6c1; --teal-2: #3aa9a4; --teal-3: #2e8c87;
+        --teal-50: #eaf7f6; --teal-100: #d6efed;
+        --ink: #1f2937; --ink-2: #374151; --ink-3: #4b5563;
+        --muted: #6b7280; --faded: #9ca3af;
+        --line: #e5e7eb; --line-2: #d1d5db;
+        --bg: #f5f5f5; --panel: #fff;
+        --amber: #d97706; --amber-50: #fffbeb; --amber-100: #fef3c7;
+        --blue: #3b82f6; --blue-50: #eff6ff; --blue-100: #dbeafe;
+        --indigo: #6366f1; --indigo-50: #eef2ff; --indigo-100: #e0e7ff;
+        --gold: #b45309; --gold-50: #fefce8; --gold-100: #fef9c3;
+        --warn: #e74c3c;
+        --sans: "Pretendard Variable", Pretendard, -apple-system, system-ui, sans-serif;
+        --mono: "JetBrains Mono", ui-monospace, monospace;
+      }
+      * { box-sizing: border-box; }
+      html, body { margin: 0; padding: 0; }
+      body {
+        font-family: var(--sans);
+        background: #e2e2e2;
+        color: var(--ink);
+        min-height: 100vh;
+        display: flex;
+        justify-content: center;
+        padding: 28px 16px;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      .poster-wrap { width: 100%; max-width: 1600px; }
+      .poster {
+        position: relative;
+        width: 1600px; height: 1080px;
+        background: var(--bg);
+        border-radius: 14px;
+        box-shadow: 0 30px 80px -40px rgba(0,0,0,.28);
+        overflow: hidden;
+        transform-origin: top center;
+      }
+      @media (max-width: 1632px) {
+        .poster { transform: scale(calc((100vw - 32px) / 1600)); }
+        .poster-wrap { height: calc(1080px * (100vw - 32px) / 1600); }
+      }
+
+      /* Header */
+      .head {
+        position: absolute; top: 0; left: 0; right: 0;
+        height: 60px; padding: 0 48px;
+        background: var(--panel);
+        border-bottom: 1px solid var(--line);
+        display: flex; align-items: center; justify-content: space-between;
+      }
+      .head__brand { display: flex; align-items: center; gap: 10px; }
+      .head__brand-name { font-size: 17px; font-weight: 800; letter-spacing: -.02em; }
+      .head__brand-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--teal); }
+      .head__brand-slug { font-family: var(--mono); font-size: 13px; color: var(--muted); }
+      .head__doc {
+        font-family: var(--mono); font-size: 11px; font-weight: 600;
+        letter-spacing: .1em; text-transform: uppercase; color: var(--teal-3);
+      }
+
+      /* Stage */
+      .stage {
+        position: absolute;
+        top: 60px; left: 0; right: 0; bottom: 34px;
+      }
+
+      /* ── Table card ───────────────────────────────── */
+      .tbl {
+        position: absolute;
+        background: #fff;
+        border: 1.5px solid var(--line-2);
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0,0,0,.05);
+      }
+
+      /* Header bar */
+      .tbl__head {
+        padding: 10px 16px 9px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .tbl__name {
+        font-size: 14px; font-weight: 700; letter-spacing: -.01em;
+      }
+      .tbl__badge {
+        font-family: var(--mono); font-size: 9px; font-weight: 600;
+        letter-spacing: .1em; text-transform: uppercase;
+        padding: 2px 7px; border-radius: 3px;
+      }
+
+      /* Divider */
+      .tbl__div { height: 1px; background: var(--line); margin: 0; }
+
+      /* Column rows */
+      .tbl__cols { display: flex; flex-direction: column; }
+      .col {
+        display: grid;
+        grid-template-columns: 34px 1fr auto;
+        align-items: center;
+        gap: 0;
+        padding: 0 0 0 0;
+        border-bottom: 1px solid var(--line);
+        height: 30px;
+        font-family: var(--mono);
+        font-size: 11px;
+      }
+      .col:last-child { border-bottom: none; }
+
+      .col__key {
+        display: flex; align-items: center; justify-content: center;
+        height: 100%; font-size: 9px; font-weight: 700;
+        letter-spacing: .06em; border-right: 1px solid var(--line);
+      }
+      .col__key--pk { background: var(--gold-50); color: var(--gold); }
+      .col__key--fk { background: var(--teal-50); color: var(--teal-3); }
+      .col__key--uk { background: var(--blue-50); color: var(--blue); }
+      .col__key--empty { background: #fafafa; }
+
+      .col__name {
+        padding: 0 10px; color: var(--ink); font-weight: 500;
+        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      }
+      .col__name--fk { color: var(--teal-3); }
+
+      .col__right {
+        padding: 0 10px 0 4px;
+        display: flex; align-items: center; gap: 6px;
+        white-space: nowrap;
+      }
+      .col__type { color: var(--muted); font-size: 10px; }
+      .col__note {
+        font-size: 9px; color: var(--faded); font-weight: 400;
+      }
+
+      /* Constraint footer row */
+      .tbl__constraint {
+        font-family: var(--mono); font-size: 9.5px;
+        color: var(--muted); padding: 6px 16px;
+        border-top: 1px solid var(--line);
+        background: #fafafa;
+        letter-spacing: .02em;
+      }
+
+      /* Teal (core entity) */
+      .tbl--teal .tbl__head  { background: var(--teal); }
+      .tbl--teal .tbl__name  { color: #fff; }
+      .tbl--teal .tbl__badge { background: rgba(255,255,255,.25); color: #fff; }
+      .tbl--teal              { border-color: var(--teal-2); }
+
+      /* Amber (auth/temporal) */
+      .tbl--amber .tbl__head  { background: var(--amber); }
+      .tbl--amber .tbl__name  { color: #fff; }
+      .tbl--amber .tbl__badge { background: rgba(255,255,255,.25); color: #fff; }
+      .tbl--amber              { border-color: var(--amber); }
+
+      /* Indigo (cache/utility) */
+      .tbl--indigo .tbl__head  { background: var(--indigo); }
+      .tbl--indigo .tbl__name  { color: #fff; }
+      .tbl--indigo .tbl__badge { background: rgba(255,255,255,.25); color: #fff; }
+      .tbl--indigo              { border-color: var(--indigo); }
+
+      /* Positions */
+      .t-subscribers   { left: 260px; top: 200px; width: 420px; }
+      .t-subscriptions { left: 780px; top: 200px; width: 460px; }
+      .t-auth_codes    { left: 200px; top: 430px; width: 380px; }
+      .t-notices       { left: 1000px; top: 430px; width: 380px; }
+
+      /* Legend */
+      .legend {
+        position: absolute;
+        right: 48px; top: 88px;
+        display: flex; flex-direction: column; gap: 8px;
+      }
+      .legend__item {
+        display: flex; align-items: center; gap: 8px;
+        font-family: var(--mono); font-size: 10px; color: var(--muted);
+      }
+      .legend__key {
+        font-size: 8.5px; font-weight: 700; padding: 2px 6px;
+        border-radius: 3px; letter-spacing: .06em;
+      }
+      .legend__key--pk { background: var(--gold-50); color: var(--gold); }
+      .legend__key--fk { background: var(--teal-50); color: var(--teal-3); }
+      .legend__key--uk { background: var(--blue-50); color: var(--blue); }
+
+      /* Arrow overlay */
+      .arrows {
+        position: absolute; top: 60px; left: 0; right: 0; bottom: 34px;
+        pointer-events: none;
+      }
+
+      /* Footer */
+      .foot {
+        position: absolute; bottom: 0; left: 0; right: 0;
+        height: 34px; background: var(--panel); border-top: 1px solid var(--line);
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 0 48px; font-family: var(--mono); font-size: 10.5px; color: var(--muted);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="poster-wrap">
+      <div class="poster">
+
+        <header class="head">
+          <div class="head__brand">
+            <span class="head__brand-name">숭실메일</span>
+            <span class="head__brand-dot"></span>
+            <span class="head__brand-slug">ssu-mail</span>
+          </div>
+          <span class="head__doc">Entity Relationship Diagram</span>
+        </header>
+
+        <main class="stage">
+
+          <!-- Legend -->
+          <div class="legend">
+            <div class="legend__item"><span class="legend__key legend__key--pk">PK</span> Primary Key</div>
+            <div class="legend__item"><span class="legend__key legend__key--fk">FK</span> Foreign Key</div>
+            <div class="legend__item"><span class="legend__key legend__key--uk">UK</span> Unique Key</div>
+          </div>
+
+          <!-- subscribers -->
+          <div class="tbl tbl--teal t-subscribers">
+            <div class="tbl__head">
+              <span class="tbl__name">subscribers</span>
+            </div>
+            <div class="tbl__div"></div>
+            <div class="tbl__cols">
+              <div class="col">
+                <span class="col__key col__key--pk">PK</span>
+                <span class="col__name">id</span>
+                <span class="col__right">
+                  <span class="col__type">BIGINT</span>
+                  <span class="col__note">autoincrement</span>
+                </span>
+              </div>
+              <div class="col">
+                <span class="col__key col__key--uk">UK</span>
+                <span class="col__name">email</span>
+                <span class="col__right">
+                  <span class="col__type">TEXT</span>
+                  <span class="col__note">not null</span>
+                </span>
+              </div>
+              <div class="col">
+                <span class="col__key col__key--uk">UK</span>
+                <span class="col__name">unsub_token</span>
+                <span class="col__right">
+                  <span class="col__type">TEXT</span>
+                  <span class="col__note">nullable</span>
+                </span>
+              </div>
+              <div class="col">
+                <span class="col__key col__key--empty"></span>
+                <span class="col__name">created_at</span>
+                <span class="col__right">
+                  <span class="col__type">TIMESTAMPTZ</span>
+                  <span class="col__note">default now()</span>
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- subscriptions -->
+          <div class="tbl tbl--teal t-subscriptions">
+            <div class="tbl__head">
+              <span class="tbl__name">subscriptions</span>
+            </div>
+            <div class="tbl__div"></div>
+            <div class="tbl__cols">
+              <div class="col">
+                <span class="col__key col__key--pk">PK</span>
+                <span class="col__name">id</span>
+                <span class="col__right">
+                  <span class="col__type">BIGINT</span>
+                  <span class="col__note">autoincrement</span>
+                </span>
+              </div>
+              <div class="col">
+                <span class="col__key col__key--fk">FK</span>
+                <span class="col__name col__name--fk">subscriber_id</span>
+                <span class="col__right">
+                  <span class="col__type">BIGINT</span>
+                  <span class="col__note">→ subscribers.id</span>
+                </span>
+              </div>
+              <div class="col">
+                <span class="col__key col__key--empty"></span>
+                <span class="col__name">category</span>
+                <span class="col__right">
+                  <span class="col__type">TEXT</span>
+                  <span class="col__note">not null</span>
+                </span>
+              </div>
+              <div class="col">
+                <span class="col__key col__key--empty"></span>
+                <span class="col__name">created_at</span>
+                <span class="col__right">
+                  <span class="col__type">TIMESTAMPTZ</span>
+                  <span class="col__note">default now()</span>
+                </span>
+              </div>
+            </div>
+            <div class="tbl__constraint">
+              UNIQUE (subscriber_id, category) · ON DELETE CASCADE
+            </div>
+          </div>
+
+          <!-- auth_codes -->
+          <div class="tbl tbl--amber t-auth_codes">
+            <div class="tbl__head">
+              <span class="tbl__name">auth_codes</span>
+            </div>
+            <div class="tbl__div"></div>
+            <div class="tbl__cols">
+              <div class="col">
+                <span class="col__key col__key--pk">PK</span>
+                <span class="col__name">email</span>
+                <span class="col__right">
+                  <span class="col__type">TEXT</span>
+                </span>
+              </div>
+              <div class="col">
+                <span class="col__key col__key--empty"></span>
+                <span class="col__name">code</span>
+                <span class="col__right">
+                  <span class="col__type">TEXT</span>
+                  <span class="col__note">not null</span>
+                </span>
+              </div>
+              <div class="col">
+                <span class="col__key col__key--empty"></span>
+                <span class="col__name">expires_at</span>
+                <span class="col__right">
+                  <span class="col__type">TIMESTAMPTZ</span>
+                  <span class="col__note">not null · 10min TTL</span>
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- notices -->
+          <div class="tbl tbl--indigo t-notices">
+            <div class="tbl__head">
+              <span class="tbl__name">notices</span>
+            </div>
+            <div class="tbl__div"></div>
+            <div class="tbl__cols">
+              <div class="col">
+                <span class="col__key col__key--pk">PK</span>
+                <span class="col__name">id</span>
+                <span class="col__right">
+                  <span class="col__type">BIGINT</span>
+                  <span class="col__note">autoincrement</span>
+                </span>
+              </div>
+              <div class="col">
+                <span class="col__key col__key--uk">UK</span>
+                <span class="col__name">link</span>
+                <span class="col__right">
+                  <span class="col__type">TEXT</span>
+                  <span class="col__note">not null</span>
+                </span>
+              </div>
+              <div class="col">
+                <span class="col__key col__key--empty"></span>
+                <span class="col__name">created_at</span>
+                <span class="col__right">
+                  <span class="col__type">TIMESTAMPTZ</span>
+                  <span class="col__note">default now()</span>
+                </span>
+              </div>
+            </div>
+          </div>
+
+        </main>
+
+        <!--
+          SVG y=0 → stage top (poster y=60)
+
+          Card geometry (stage-relative):
+            subscribers:   left=260  top=220  width=420  → right=680
+                           col rows: head=39 + div=1 → col_top=260
+                           id row center y   = 220+39+1+15 = 275
+                           email row center  = 275+30 = 305
+                           unsub_token       = 305+30 = 335  ← FK connection row
+                           created_at        = 335+30 = 365
+                           bottom ≈ 220+39+1+4×30 = 380
+
+            subscriptions: left=880  top=220  width=460  → left=880
+                           id center y       = 275
+                           subscriber_id y   = 305  ← FK connection row
+                           bottom ≈ 380 + constraint(28) = 408
+
+          FK line: from subscribers right (x=680) at y=305 → subscriptions left (x=880) at y=305
+
+          1 — N labels: x=700 and x=860 at y=295
+        -->
+        <!--
+          Card geometry (stage y=0 = poster y=60):
+            Head height ≈ 40px (10+21+9), div 1px → cols start at stage y = card_top+41
+
+            subscribers   top=220 → cols from y=261
+              id            center y=276
+              email         center y=306
+              unsub_token   center y=336
+              created_at    center y=366
+              right edge x=680
+
+            subscriptions  top=220 → cols from y=261
+              id            center y=276
+              subscriber_id center y=306
+              left edge x=880
+
+          Elbow FK path:
+            Start: subscribers right @ (680, 276)  — id row
+            Elbow: midpoint x=780, bend down from y=276 to y=306
+            End:   subscriptions left @ (880, 306) — subscriber_id row
+        -->
+        <svg class="arrows" viewBox="0 0 1600 986" preserveAspectRatio="none">
+          <defs>
+            <marker id="ar-teal" viewBox="0 0 10 10" refX="9" refY="5"
+              markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+              <path d="M0,0 L10,5 L0,10 z" fill="#3aa9a4"/>
+            </marker>
+          </defs>
+
+          <!--
+            subscribers  top=200: cols start y=241, id center=256, right x=680
+            subscriptions top=200: cols start y=241, subscriber_id center=286, left x=780
+            Elbow: (680,256) → (730,256) → (730,286) → (780,286)
+          -->
+
+          <!-- FK: subscribers.id ──elbow──→ subscriptions.subscriber_id -->
+          <path d="M680 256 L730 256 L730 286 L780 286"
+            fill="none" stroke="#3aa9a4" stroke-width="1.8"
+            marker-end="url(#ar-teal)"/>
+
+          <!-- Cardinality 1: double bar near subscribers.id -->
+          <line x1="683" y1="248" x2="683" y2="264" stroke="#3aa9a4" stroke-width="2"/>
+          <line x1="689" y1="248" x2="689" y2="264" stroke="#3aa9a4" stroke-width="2"/>
+
+          <!-- Cardinality N: crow's foot near subscriptions.subscriber_id -->
+          <line x1="776" y1="286" x2="760" y2="276" stroke="#3aa9a4" stroke-width="1.6"/>
+          <line x1="776" y1="286" x2="760" y2="296" stroke="#3aa9a4" stroke-width="1.6"/>
+          <line x1="776" y1="286" x2="760" y2="286" stroke="#3aa9a4" stroke-width="1.6"/>
+
+          <!-- Labels -->
+          <text x="696" y="252" font-family="JetBrains Mono" font-size="10"
+            fill="#2e8c87" font-weight="700">1</text>
+          <text x="748" y="281" font-family="JetBrains Mono" font-size="10"
+            fill="#2e8c87" font-weight="700">N</text>
+          <text x="730" y="272" font-family="JetBrains Mono" font-size="9"
+            fill="#9ca3af" text-anchor="middle">ON DELETE CASCADE</text>
+
+        </svg>
+
+        <footer class="foot">
+          <span>github.com/DWL21/ssu-chapel · backend/app/models</span>
+          <span>PostgreSQL 17 · SQLAlchemy · Alembic</span>
+        </footer>
+      </div>
+    </div>
+  </body>
+</html>

@@ -297,17 +297,19 @@ async def resend_today_to_all() -> int:
     return sent
 
 
-def _job():
-    asyncio.run(_collect_and_send())
+def _job(loop: asyncio.AbstractEventLoop):
+    future = asyncio.run_coroutine_threadsafe(_collect_and_send(), loop)
+    future.result()
 
 
-def _cleanup_job():
-    asyncio.run(_cleanup_old_records())
+def _cleanup_job(loop: asyncio.AbstractEventLoop):
+    future = asyncio.run_coroutine_threadsafe(_cleanup_old_records(), loop)
+    future.result()
 
 
-def run_scheduler():
-    schedule.every().day.at("08:00", "Asia/Seoul").do(_job)
-    schedule.every().monday.at("03:00", "Asia/Seoul").do(_cleanup_job)
+def run_scheduler(loop: asyncio.AbstractEventLoop):
+    schedule.every().day.at("08:00", "Asia/Seoul").do(_job, loop)
+    schedule.every().monday.at("03:00", "Asia/Seoul").do(_cleanup_job, loop)
     logger.info("스케줄러 시작 — 매일 08:00 KST 발송 / 매주 월요일 03:00 KST cleanup")
 
     while True:

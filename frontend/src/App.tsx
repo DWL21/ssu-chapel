@@ -528,7 +528,16 @@ return (
 
         <div className="header-action" style={{ marginTop: '0.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <h1 className="title" style={{ margin: 0, color: theme.ssuBlue }}>숭실대학교 채플 정보</h1>
-          <div style={{ display: 'flex', gap: '0.5rem' }}>
+          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+            <a
+              href="https://ssu-mail.simplyimg.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn-icon"
+              style={{ textDecoration: 'none' }}
+            >
+              📧 메일 구독
+            </a>
             {token && <button className="btn-icon" onClick={handleLogout}>로그아웃</button>}
           </div>
         </div>
