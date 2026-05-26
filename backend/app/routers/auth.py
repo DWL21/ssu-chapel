@@ -1,3 +1,4 @@
+import asyncio
 import secrets
 from datetime import datetime, timedelta, timezone
 
@@ -42,6 +43,6 @@ async def request_code(body: RequestCodeBody, db: AsyncSession = Depends(get_db)
         db.add(AuthCode(email=email, code=code, expires_at=expires_at))
 
     await db.commit()
-    send_auth_code(email, code)
+    await asyncio.to_thread(send_auth_code, email, code)
 
     return {"ok": True}

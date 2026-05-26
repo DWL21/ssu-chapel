@@ -658,8 +658,9 @@ function Subscribe() {
     setError(null);
   };
   const selectAll = () => setSelected(selected.length === CATEGORIES.length ? [] : CATEGORIES.map(c => c.value));
-  const goBack = () => { setError(null); if (step > 1) setStep(step - 1); };
-  const goStep = (n: number) => { if (n < step) { setError(null); setStep(n); } };
+  const resetFlow = () => { setStep(1); setCode(['', '', '', '', '', '']); setSelected([]); setMode('new'); setUnsubscribed(false); setError(null); };
+  const goBack = () => { setError(null); if (step === 4) { resetFlow(); } else if (step > 1) { setStep(step - 1); } };
+  const goStep = (n: number) => { if (step === 4) { resetFlow(); } else if (n < step) { setError(null); setStep(n); } };
 
   const goNext = async () => {
     setError(null);
