@@ -689,6 +689,37 @@ return (
                   로그인하기
                 </button>
               </div>
+
+              <a
+                href="https://ssu-mail.simplyimg.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ textDecoration: 'none' }}
+              >
+                <div className="login-prompt-card" style={{
+                  backgroundColor: isDarkMode ? '#0c4a6e' : '#eff6ff',
+                  borderColor: isDarkMode ? '#0369a1' : '#bfdbfe',
+                  cursor: 'pointer',
+                  transition: 'opacity 0.15s ease'
+                }}
+                  onMouseEnter={e => (e.currentTarget.style.opacity = '0.85')}
+                  onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
+                >
+                  <div className="login-prompt-icon">📧</div>
+                  <p className="login-prompt-text" style={{ color: isDarkMode ? '#7dd3fc' : '#1d4ed8' }}>채플 출결 알림 메일 구독</p>
+                  <p className="login-prompt-sub" style={{ color: isDarkMode ? '#38bdf8' : '#3b82f6' }}>
+                    매주 채플 출결 결과를 이메일로 받아보세요.<br />로그인 없이 구독할 수 있습니다.
+                  </p>
+                  <div className="btn-login-prompt" style={{
+                    backgroundColor: isDarkMode ? '#0369a1' : '#2563eb',
+                    display: 'inline-block',
+                    textAlign: 'center'
+                  }}>
+                    메일 구독하기 →
+                  </div>
+                </div>
+              </a>
+
               <SectionBrowser isDarkMode={isDarkMode} />
             </>
           )
