@@ -239,7 +239,7 @@ function Header() {
           <span className="brand__sub">ssu-mail</span>
         </a>
         <nav className="site-nav">
-          <span className="site-nav__links" style={{ display: 'inline-flex', gap: 18 }}>
+          <span className="site-nav__links" style={{ display: 'inline-flex', gap: 20 }}>
             <a href="#how">소개</a>
             <a href="#subscribe">구독</a>
             <a href="#faq">FAQ</a>
