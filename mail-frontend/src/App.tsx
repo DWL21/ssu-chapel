@@ -241,7 +241,6 @@ function Header() {
         <nav className="site-nav">
           <span className="site-nav__links" style={{ display: 'inline-flex', gap: 24 }}>
             <a href="#how">소개</a>
-            <a href="#subscribe">구독</a>
             <a href="#faq">FAQ</a>
           </span>
           <a className="site-nav__back" href="#subscribe">
