@@ -11,3 +11,12 @@ async def fetch_notices_from_crawler(page: int = 1, category: str = "") -> list[
         resp = await client.get(f"{settings.crawler_base_url}/notices", params=params)
         resp.raise_for_status()
         return resp.json().get("notices", [])
+
+
+async def fetch_notice_detail_from_crawler(slug: str) -> dict:
+    async with httpx.AsyncClient(timeout=15.0) as client:
+        resp = await client.get(
+            f"{settings.crawler_base_url}/notices/detail", params={"slug": slug}
+        )
+        resp.raise_for_status()
+        return resp.json()

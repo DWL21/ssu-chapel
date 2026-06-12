@@ -1,6 +1,8 @@
 import asyncio
 import logging
+import re
 from datetime import date, datetime, timezone, timedelta
+from urllib.parse import parse_qs, urlsplit
 
 import schedule
 import time
@@ -9,7 +11,10 @@ from sqlalchemy import select, delete
 from app.database import AsyncSessionLocal
 from app.models.notice import Notice
 from app.models.subscription import Subscriber, Subscription
-from app.services.notice_collector import fetch_notices_from_crawler
+from app.services.notice_collector import (
+    fetch_notices_from_crawler,
+    fetch_notice_detail_from_crawler,
+)
 from app.email_template import build_email_html
 from app.SendMail import send_email_with_retry
 
@@ -176,47 +181,20 @@ async def _fetch_notices_for_categories(categories: set[str]) -> list[dict]:
     return result
 
 
-async def _fetch_until_cutoff(
-    categories: set[str], cutoff: date, max_pages: int = 5
-) -> list[dict]:
-    """카테고리별로 페이지를 늘려가며 게시일이 cutoff 이전인 공지를 만날 때까지 크롤링.
-    카테고리당 max_pages 까지가 안전 상한. 링크 기준 중복 제거."""
-    seen: set[str] = set()
-    result: list[dict] = []
-    for cat in categories:
-        cat_param = "" if cat == "전체" else cat
-        for page in range(1, max_pages + 1):
-            try:
-                page_notices = await fetch_notices_from_crawler(page=page, category=cat_param)
-            except Exception:
-                logger.exception("크롤링 실패: cat=%s page=%d", cat, page)
-                break
-            if not page_notices:
-                break
-
-            oldest: date | None = None
-            for n in page_notices:
-                link = n.get("link")
-                if link and link not in seen:
-                    seen.add(link)
-                    result.append(n)
-                try:
-                    d = datetime.strptime(n.get("date", ""), "%Y.%m.%d").date()
-                    if oldest is None or d < oldest:
-                        oldest = d
-                except (ValueError, TypeError):
-                    continue
-
-            if oldest is not None and oldest < cutoff:
-                break
-        else:
-            logger.warning("cat=%s max_pages=%d 도달, 3일 윈도우 끝까지 못 봤을 가능성", cat, max_pages)
-    return result
+def _slug_from_link(link: str) -> str | None:
+    """공지 링크의 slug 쿼리 파라미터 추출. 없으면 None."""
+    try:
+        qs = parse_qs(urlsplit(link).query)
+    except ValueError:
+        return None
+    values = qs.get("slug")
+    return values[0] if values and values[0] else None
 
 
 async def send_now_to_subscriber(subscriber_id: int, categories: set[str]) -> None:
-    """구독 완료 직후 백필 발송 — 게시일 7일 이내의 공지를 모두 발송.
-    발송 후 notices 에 없는 링크를 삽입하여 다음 크론의 재발송을 방지한다."""
+    """구독 완료 직후 백필 발송 — DB에 수집된 최근 7일치 공지 중
+    구독 카테고리에 해당하는 것을 발송한다. 크롤링 목록 조회 없이 notices 의
+    링크에서 slug 를 뽑아 상세만 조회하며, 발송 이력은 기록하지 않는다."""
     async with AsyncSessionLocal() as db:
         result = await db.execute(
             select(Subscriber).where(Subscriber.id == subscriber_id)
@@ -225,20 +203,47 @@ async def send_now_to_subscriber(subscriber_id: int, categories: set[str]) -> No
         if subscriber is None:
             return
 
-    cutoff = date.today() - timedelta(days=7)
-    notices = await _fetch_until_cutoff(categories, cutoff)
+        cutoff = datetime.now(timezone.utc) - timedelta(days=7)
+        result = await db.execute(
+            select(Notice.link).where(Notice.created_at >= cutoff)
+        )
+        links = result.scalars().all()
 
-    def _within_window(n: dict) -> bool:
+    # 같은 공지가 피드별 링크 form(전체/카테고리)으로 중복 저장될 수 있어 slug 로 dedup
+    slug_to_link: dict[str, str] = {}
+    for link in links:
+        slug = _slug_from_link(link)
+        if slug and slug not in slug_to_link:
+            slug_to_link[slug] = link
+
+    notices: list[dict] = []
+    for slug, link in slug_to_link.items():
         try:
-            return datetime.strptime(n.get("date", ""), "%Y.%m.%d").date() >= cutoff
-        except (ValueError, TypeError):
-            return False
-
-    notices = [n for n in notices if n.get("link") and _within_window(n)]
+            detail = await fetch_notice_detail_from_crawler(slug)
+        except Exception:
+            logger.exception("상세 조회 실패: slug=%s", slug)
+            continue
+        if not detail.get("title"):
+            continue
+        if "전체" not in categories and detail.get("category") not in categories:
+            continue
+        notices.append({
+            "title": detail["title"],
+            "category": detail.get("category", ""),
+            "date": detail.get("date", ""),
+            "link": link,
+        })
 
     if not notices:
         logger.info("즉시 발송 스킵: 최근 7일 공지 없음 (%s)", subscriber.email)
         return
+
+    def _sort_key(n: dict) -> tuple[int, int, int]:
+        # 상세 페이지 날짜 형식: "2026년 6월 11일" (zero-padding 없음)
+        m = re.fullmatch(r"(\d{4})년 (\d{1,2})월 (\d{1,2})일", n.get("date", ""))
+        return (int(m.group(1)), int(m.group(2)), int(m.group(3))) if m else (0, 0, 0)
+
+    notices.sort(key=_sort_key, reverse=True)
 
     today = date.today()
     html = build_email_html(notices, target_date=today, unsub_token=subscriber.unsub_token, welcome=True)
@@ -249,14 +254,6 @@ async def send_now_to_subscriber(subscriber_id: int, categories: set[str]) -> No
         logger.info("즉시 발송 완료: %s (%d건)", subscriber.email, len(notices))
     except Exception:
         logger.exception("즉시 발송 실패: %s", subscriber.email)
-        return
-
-    sent_links = {n["link"] for n in notices}
-    async with AsyncSessionLocal() as db:
-        existing = await _existing_links(db)
-        new_links = sent_links - existing
-        if new_links:
-            await _record_new_links(db, new_links)
 
 
 async def resend_today_to_all() -> int:
