@@ -88,14 +88,19 @@ async def _collect_and_send():
 
         today = date.today()
         sent_link_pool: set[str] = set()
+        # 발송 실패 구독자의 링크는 기록하지 않고 다음 회차에 재발송한다
+        # (이미 받은 구독자에게는 중복 발송 — 유실보다 중복을 택함)
+        undelivered_links: set[str] = set()
 
         for sid, info in subscriber_map.items():
             subscriber = info["subscriber"]
             cats = info["categories"]
 
             if cats & failed_categories:
-                logger.info("실패 카테고리 구독으로 이번 회차 스킵: %s", subscriber.email)
-                continue
+                logger.info(
+                    "크롤링 실패 카테고리 %s 제외하고 발송: %s",
+                    cats & failed_categories, subscriber.email,
+                )
 
             matched: list[dict] = []
             seen: set[str] = set()
@@ -117,10 +122,11 @@ async def _collect_and_send():
                 sent_link_pool |= seen
                 logger.info("발송 완료: %s (%d건)", subscriber.email, len(matched))
             except Exception:
+                undelivered_links |= seen
                 logger.exception("발송 실패: %s", subscriber.email)
 
-        if sent_link_pool:
-            await _record_new_links(db, sent_link_pool)
+        if sent_link_pool - undelivered_links:
+            await _record_new_links(db, sent_link_pool - undelivered_links)
 
 
 async def _cleanup_old_records():
@@ -137,9 +143,16 @@ async def _cleanup_old_records():
 
 
 async def seed_existing_notices() -> None:
-    """부팅 시 1회 — 현재 구독 카테고리 page=1 링크를 notices 에 사전 저장.
-    첫 cron 시점의 누적분 폭주 발송을 차단한다. 메일 발송은 하지 않는다."""
+    """notices 테이블이 비어 있을 때만(최초 배포) 현재 구독 카테고리 page=1
+    링크를 사전 저장해 첫 cron 의 누적분 폭주 발송을 차단한다. 메일 발송은
+    하지 않는다. 재시작마다 실행하면 마지막 cron 이후 올라온 공지가 발송
+    없이 기록되어 유실되므로, 테이블에 기록이 있으면 건너뛴다."""
     async with AsyncSessionLocal() as db:
+        result = await db.execute(select(Notice.id).limit(1))
+        if result.scalar_one_or_none() is not None:
+            logger.info("seed 스킵: 기존 발송 기록 존재")
+            return
+
         result = await db.execute(select(Subscription.category).distinct())
         all_categories = set(result.scalars().all())
 
